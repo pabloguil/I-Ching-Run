@@ -1,4 +1,4 @@
-# I-Ching-Runa# 🧘 I Ching App
+🧘 I Ching App
 
 Una aplicación de escritorio desarrollada en Python que permite consultar el I Ching de forma interactiva y visual, generando hexagramas mediante el método de las monedas.
 

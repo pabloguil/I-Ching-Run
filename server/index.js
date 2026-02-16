@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 import { guardarConsulta, obtenerHistorial, limpiarHistorial } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,34 +14,51 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Middleware para forzar MIME types correctos
-app.use((req, res, next) => {
-  if (req.url.endsWith('.js')) {
-    res.type('application/javascript; charset=utf-8');
-  } else if (req.url.endsWith('.mjs')) {
-    res.type('application/javascript; charset=utf-8');
-  } else if (req.url.endsWith('.css')) {
-    res.type('text/css; charset=utf-8');
-  } else if (req.url.endsWith('.json')) {
-    res.type('application/json; charset=utf-8');
-  }
-  next();
-});
-
-// En produccion, servir archivos del build de Vite
+// En produccion, manejar archivos estáticos con MIME types correctos
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(join(__dirname, '..', 'dist'), {
-    setHeaders: (res, path) => {
-      if (path.endsWith('.js') || path.endsWith('.mjs')) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      } else if (path.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css; charset=utf-8');
-      }
+  const distPath = join(__dirname, '..', 'dist');
+
+  // Servir archivos .js con MIME type correcto
+  app.get('*.js', (req, res, next) => {
+    const filePath = join(distPath, req.path);
+    if (existsSync(filePath)) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.sendFile(filePath);
+    } else {
+      next();
     }
-  }));
+  });
+
+  // Servir archivos .css con MIME type correcto
+  app.get('*.css', (req, res, next) => {
+    const filePath = join(distPath, req.path);
+    if (existsSync(filePath)) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      res.sendFile(filePath);
+    } else {
+      next();
+    }
+  });
+
+  // Servir otros archivos estáticos normalmente
+  app.use(express.static(distPath));
 }
 
 // --- API Routes ---
+
+// Debug endpoint para verificar que el servidor funciona
+app.get('/api/health', (req, res) => {
+  const distPath = join(__dirname, '..', 'dist');
+  const distExists = existsSync(distPath);
+  const indexExists = existsSync(join(distPath, 'index.html'));
+  res.json({
+    status: 'ok',
+    nodeEnv: process.env.NODE_ENV,
+    distExists,
+    indexExists,
+    distPath
+  });
+});
 
 // Guardar una consulta
 app.post('/api/consultas', (req, res) => {

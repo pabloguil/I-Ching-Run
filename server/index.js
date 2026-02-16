@@ -13,9 +13,31 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Middleware para forzar MIME types correctos
+app.use((req, res, next) => {
+  if (req.url.endsWith('.js')) {
+    res.type('application/javascript; charset=utf-8');
+  } else if (req.url.endsWith('.mjs')) {
+    res.type('application/javascript; charset=utf-8');
+  } else if (req.url.endsWith('.css')) {
+    res.type('text/css; charset=utf-8');
+  } else if (req.url.endsWith('.json')) {
+    res.type('application/json; charset=utf-8');
+  }
+  next();
+});
+
 // En produccion, servir archivos del build de Vite
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(join(__dirname, '..', 'dist')));
+  app.use(express.static(join(__dirname, '..', 'dist'), {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.js') || path.endsWith('.mjs')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      } else if (path.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      }
+    }
+  }));
 }
 
 // --- API Routes ---

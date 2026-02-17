@@ -28,6 +28,8 @@ export default {
   'hex.original': 'Original Hexagram',
   'hex.transformed': 'Transformed Hexagram',
   'hex.noChanges': 'No changing lines',
+  'hex.changingLegend': 'changing line',
+  'hex.transformedLegend': 'transformed line',
 
   // Interpretation
   'interp.title': 'Interpretation',

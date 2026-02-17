@@ -3,7 +3,7 @@ import { useI18n } from '../i18n/index.jsx';
 
 export default function Interpretation({ hexOriginal, hexMutado, lineasMutantes }) {
   const { t } = useI18n();
-  const [expandido, setExpandido] = useState(true);
+  const [expandido, setExpandido] = useState(false);
 
   if (!hexOriginal) return null;
 

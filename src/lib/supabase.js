@@ -30,6 +30,25 @@ function loadSession() {
   }
 }
 
+// --- Server session cookie helpers ---
+// Tras el login, notifica al servidor para que emita una cookie httpOnly.
+// Esto protege los endpoints de Express de robos de token via XSS.
+async function syncServerSession(token) {
+  try {
+    await fetch('/api/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+  } catch { /* no-op: la cookie es una mejora de seguridad opcional */ }
+}
+
+async function clearServerSession() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch { /* no-op */ }
+}
+
 // --- Auth helpers ---
 
 async function authFetch(endpoint, body) {
@@ -51,7 +70,10 @@ export async function signUp(email, password) {
   const session = data.access_token
     ? { access_token: data.access_token, refresh_token: data.refresh_token, user: data.user }
     : null;
-  if (session) saveSession(session);
+  if (session) {
+    saveSession(session);
+    await syncServerSession(data.access_token);
+  }
   return { session, user: data.user };
 }
 
@@ -63,11 +85,14 @@ export async function signIn(email, password) {
     user: data.user,
   };
   saveSession(session);
+  await syncServerSession(data.access_token);
   return { session, user: data.user };
 }
 
 export async function signOut() {
   const session = loadSession();
+  // Limpiar cookie httpOnly del servidor
+  await clearServerSession();
   if (session?.access_token) {
     try {
       await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
@@ -95,6 +120,7 @@ export async function refreshSession() {
       user: data.user,
     };
     saveSession(newSession);
+    await syncServerSession(data.access_token);
     return newSession;
   } catch {
     saveSession(null);

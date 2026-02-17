@@ -63,6 +63,17 @@ export default function HexagramDisplay({ lineas, lineasMutantes = [], animating
               fill={color}
               rx={2}
             />
+            {/* Marcador accesible para yin mutante (6): × en el hueco central */}
+            {esMutante && (
+              <text
+                x={leftMargin + segmentLength + gapLength / 2}
+                y={y + 4}
+                textAnchor="middle"
+                fontSize="10"
+                fill={color}
+                aria-hidden="true"
+              >×</text>
+            )}
           </g>
         );
       } else {
@@ -77,6 +88,17 @@ export default function HexagramDisplay({ lineas, lineasMutantes = [], animating
               fill={color}
               rx={2}
             />
+            {/* Marcador accesible para yang mutante (9): ○ centrado sobre la línea */}
+            {esMutante && (
+              <text
+                x={leftMargin + (segmentLength * 2 + gapLength) / 2}
+                y={y - lineWidth / 2 - 3}
+                textAnchor="middle"
+                fontSize="10"
+                fill={color}
+                aria-hidden="true"
+              >○</text>
+            )}
           </g>
         );
       }
@@ -84,6 +106,10 @@ export default function HexagramDisplay({ lineas, lineasMutantes = [], animating
 
     return elements;
   };
+
+  const hasMutantes = lineasMutantes.length > 0;
+  const swatchColor = esMutado ? mutadoColor : mutantColor;
+  const legendLabel = esMutado ? t('hex.transformedLegend') : t('hex.changingLegend');
 
   return (
     <div className="hexagram-svg-container">
@@ -95,6 +121,16 @@ export default function HexagramDisplay({ lineas, lineasMutantes = [], animating
       >
         {renderLineas()}
       </svg>
+      {hasMutantes && (
+        <div className="hexagram-legend">
+          <span
+            className="legend-swatch"
+            style={{ background: swatchColor }}
+            aria-hidden="true"
+          />
+          <span className="legend-text">{legendLabel}</span>
+        </div>
+      )}
     </div>
   );
 }

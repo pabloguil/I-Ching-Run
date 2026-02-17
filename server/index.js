@@ -179,6 +179,33 @@ if (existsSync(distPath)) {
   app.use(express.static(distPath));
 }
 
+// --- Cookie helpers (sin dependencias externas) ---
+
+function parseCookies(req) {
+  const cookies = {};
+  for (const pair of (req.headers.cookie || '').split(';')) {
+    const [k, ...v] = pair.trim().split('=');
+    if (k) cookies[k.trim()] = decodeURIComponent(v.join('='));
+  }
+  return cookies;
+}
+
+function setSessionCookie(res, token) {
+  const maxAge = 7 * 24 * 60 * 60; // 7 días en segundos
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader(
+    'Set-Cookie',
+    `iching-session=${encodeURIComponent(token)}; HttpOnly; SameSite=Strict; Max-Age=${maxAge}; Path=/${secure}`
+  );
+}
+
+function clearSessionCookie(res) {
+  res.setHeader(
+    'Set-Cookie',
+    'iching-session=; HttpOnly; SameSite=Strict; Max-Age=0; Path=/'
+  );
+}
+
 // --- Auth helpers ---
 
 /**
@@ -202,20 +229,25 @@ async function verifySupabaseToken(token) {
 }
 
 /**
- * Middleware que exige un Bearer token válido de Supabase.
+ * Middleware que exige autenticación válida.
+ * Comprueba primero la cookie httpOnly (más seguro), luego Bearer token como fallback.
  * Si Supabase no está configurado, devuelve 403.
  */
 async function requireAuth(req, res, next) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return res.status(403).json({ error: 'Operación no permitida: autenticación no configurada en el servidor' });
   }
+  const cookies = parseCookies(req);
+  const cookieToken = cookies['iching-session'] || null;
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const token = cookieToken || bearerToken;
+  if (!token) {
     return res.status(401).json({ error: 'Autenticación requerida' });
   }
-  const token = authHeader.slice(7);
   const user = await verifySupabaseToken(token);
   if (!user) {
+    clearSessionCookie(res); // limpiar cookie inválida/expirada
     return res.status(401).json({ error: 'Token inválido o expirado' });
   }
   req.authUser = user;
@@ -248,13 +280,40 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Importar DB de forma lazy para no bloquear el arranque
-let dbModule = null;
-async function getDB() {
-  if (!dbModule) {
-    dbModule = await import('./db.js');
+// Establecer cookie de sesión httpOnly tras login en Supabase
+app.post('/api/auth/session', async (req, res) => {
+  const { token } = req.body;
+  if (!token || typeof token !== 'string' || token.length > 2000) {
+    return res.status(400).json({ error: 'Token requerido' });
   }
-  return dbModule;
+  const user = await verifySupabaseToken(token);
+  if (!user) {
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+  setSessionCookie(res, token);
+  res.json({ ok: true });
+});
+
+// Limpiar cookie de sesión en logout
+app.post('/api/auth/logout', (req, res) => {
+  clearSessionCookie(res);
+  res.json({ ok: true });
+});
+
+// Importar DB de forma lazy para no bloquear el arranque.
+// Se almacena la Promise (no el módulo) para evitar que peticiones
+// concurrentes que lleguen antes de que resuelva el primer import
+// lancen múltiples inicializaciones.
+let dbPromise = null;
+function getDB() {
+  if (!dbPromise) {
+    dbPromise = import('./db.js').then(async (mod) => {
+      // Esperar a que la BD esté lista antes de devolver el módulo
+      await mod.dbInitPromise;
+      return mod;
+    });
+  }
+  return dbPromise;
 }
 
 // Guardar una consulta

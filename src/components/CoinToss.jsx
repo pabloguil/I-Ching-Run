@@ -7,6 +7,31 @@ const VALOR_NOMBRES = {
   9: 'Yang Mutante',
 };
 
+function YangFace() {
+  return (
+    <svg viewBox="-250 -250 500 500" className="coin-svg">
+      <circle r="230" strokeWidth="10" />
+      <circle r="200" strokeWidth="6" />
+      <rect x="-60" y="-60" width="120" height="120" strokeWidth="10" />
+      <text x="0" y="-125" fontSize="110">通</text>
+      <text x="0" y="145" fontSize="110">寶</text>
+      <text x="-145" y="0" fontSize="110">通</text>
+      <text x="145" y="0" fontSize="110">寶</text>
+    </svg>
+  );
+}
+
+function YinFace() {
+  return (
+    <svg viewBox="-250 -250 500 500" className="coin-svg">
+      <circle r="230" strokeWidth="10" />
+      <circle r="200" strokeWidth="6" />
+      <rect x="-60" y="-60" width="120" height="120" strokeWidth="10" />
+      <text x="0" y="145" fontSize="96">易經</text>
+    </svg>
+  );
+}
+
 export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, animatingLine }) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [shownMonedas, setShownMonedas] = useState(null);
@@ -18,7 +43,7 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
     setIsSpinning(true);
     setShownMonedas(null);
     onLanzar();
-    setTimeout(() => setIsSpinning(false), 900);
+    setTimeout(() => setIsSpinning(false), 1300);
   };
 
   useEffect(() => {
@@ -53,7 +78,6 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
           <div className="coins-row">
             {[0, 1, 2].map((i) => {
               const valor = shownMonedas ? shownMonedas[i] : null;
-              const esYang = valor === 'yang';
               return (
                 <div
                   key={i}
@@ -64,11 +88,18 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
                       ? `coin-${valor}`
                       : ''
                   }`}
-                  style={isSpinning ? { animationDelay: `${i * 80}ms` } : {}}
                 >
-                  <span className="coin-face">
-                    {!isSpinning && valor && (esYang ? '⚊' : '⚋')}
-                  </span>
+                  <div
+                    className="coin-inner"
+                    style={isSpinning ? { animationDelay: `${i * 120}ms` } : undefined}
+                  >
+                    <div className="coin-front">
+                      <YangFace />
+                    </div>
+                    <div className="coin-back">
+                      <YinFace />
+                    </div>
+                  </div>
                 </div>
               );
             })}

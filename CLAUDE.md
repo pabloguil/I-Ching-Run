@@ -121,6 +121,11 @@ npm start         # Producción: Express sirve dist/
 
 ## Notas de despliegue (Hostinger)
 
-- `postinstall` ejecuta `vite build` y copia `dist/` al root para Apache
+- `postinstall` usa `scripts/postinstall.cjs` que:
+  1. Limpia `index.html` si se convirtió en directorio (bug de deploys anteriores)
+  2. Limpia `./assets/` obsoleto en la raíz
+  3. Ejecuta `vite build` — Express sirve `dist/` directamente
 - El servidor Node.js sirve archivos estáticos con MIME types explícitos (problema histórico con `.js` y `.css`)
+- **No se copian** archivos de `dist/` a la raíz — Express maneja todo desde `dist/`
 - **sql.js** se usa en lugar de **better-sqlite3** por compatibilidad con hosting compartido (no se pueden compilar módulos nativos)
+- **BUG HISTÓRICO**: el `postinstall` anterior hacía `cp dist/index.html ./index.html` que sobreescribía la plantilla fuente con el HTML compilado, rompiendo deploys sucesivos

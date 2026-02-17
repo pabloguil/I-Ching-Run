@@ -59,7 +59,9 @@ export default function History() {
           {consultas.map((c) => (
             <div key={c.id} className="history-item">
               <div className="history-fecha">{new Date(c.fecha).toLocaleString('es-ES')}</div>
-              <div className="history-pregunta">{c.pregunta}</div>
+              <div className="history-pregunta">
+                {c.pregunta || 'Consulta general'}
+              </div>
               <div className="history-resultado">
                 <span className="history-original">{c.nombre_original}</span>
                 {c.tiene_mutaciones === 1 && c.nombre_mutado && (

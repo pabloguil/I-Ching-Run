@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import QuestionForm from './components/QuestionForm';
 import CoinToss from './components/CoinToss';
 import HexagramDisplay from './components/HexagramDisplay';
@@ -30,6 +30,21 @@ export default function App() {
   const [animatingLine, setAnimatingLine] = useState(-1);
   const [showHistory, setShowHistory] = useState(false);
   const [historialKey, setHistorialKey] = useState(0);
+  const [tema, setTema] = useState(() => {
+    return localStorage.getItem('iching-tema') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', tema);
+  }, [tema]);
+
+  const toggleTema = useCallback(() => {
+    setTema((t) => {
+      const nuevo = t === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('iching-tema', nuevo);
+      return nuevo;
+    });
+  }, []);
 
   const confirmarPregunta = useCallback(() => {
     if (!pregunta.trim()) return;
@@ -38,6 +53,13 @@ export default function App() {
     setLineas([]);
     setUltimaMoneda(null);
   }, [pregunta]);
+
+  const consultaGeneral = useCallback(() => {
+    setPreguntaConfirmada('');
+    setFase('lanzando');
+    setLineas([]);
+    setUltimaMoneda(null);
+  }, []);
 
   const lanzarMonedas = useCallback(async () => {
     if (lineas.length >= 6) return;
@@ -102,6 +124,14 @@ export default function App() {
       <header className="header">
         <h1 className="title">易經</h1>
         <p className="subtitle">I Ching &mdash; El Libro de las Mutaciones</p>
+        <button
+          className="btn-tema"
+          onClick={toggleTema}
+          aria-label="Cambiar tema"
+          title={tema === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+        >
+          {tema === 'dark' ? '☀' : '☽'}
+        </button>
       </header>
 
       <main className="main">
@@ -110,15 +140,18 @@ export default function App() {
             pregunta={pregunta}
             setPregunta={setPregunta}
             onConfirmar={confirmarPregunta}
+            onConsultaGeneral={consultaGeneral}
           />
         )}
 
-        {(fase === 'lanzando' || fase === 'resultado') && (
+        {fase !== 'pregunta' && (
           <>
-            <div className="pregunta-display">
-              <span className="pregunta-label">Tu pregunta:</span>
-              <p className="pregunta-texto">{preguntaConfirmada}</p>
-            </div>
+            {fase === 'lanzando' && preguntaConfirmada && (
+              <div className="pregunta-display">
+                <span className="pregunta-label">Tu pregunta:</span>
+                <p className="pregunta-texto">{preguntaConfirmada}</p>
+              </div>
+            )}
 
             <CoinToss
               lineas={lineas}

@@ -3,7 +3,7 @@
    ========================================================== */
 
 :root {
-  /* Palette */
+  /* Palette — Dark (default) */
   --bg-primary: #0a0a0f;
   --bg-secondary: #12121a;
   --bg-card: #1a1a24;
@@ -34,6 +34,33 @@
   --space-lg: 1.5rem;
   --space-xl: 2.5rem;
   --space-2xl: 4rem;
+}
+
+/* ---- Light Theme ---- */
+[data-theme="light"] {
+  --bg-primary: #f5f0e6;
+  --bg-secondary: #ede7d9;
+  --bg-card: #e6dece;
+  --bg-card-hover: #dcd4c2;
+
+  --text-primary: #2a2010;
+  --text-secondary: #5a4e38;
+  --text-muted: #8c7d66;
+
+  --accent-gold: #8b6508;
+  --accent-red: #b03228;
+  --accent-red-soft: #8c2820;
+
+  --border-subtle: rgba(139, 101, 8, 0.2);
+  --border-active: rgba(139, 101, 8, 0.45);
+
+  --shadow-glow: 0 0 40px rgba(139, 101, 8, 0.08);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* ---- Reset ---- */
@@ -72,6 +99,33 @@ body {
   text-align: center;
   padding: var(--space-2xl) 0 var(--space-xl);
   position: relative;
+}
+
+/* ---- Theme Toggle ---- */
+.btn-tema {
+  position: absolute;
+  top: var(--space-md);
+  right: 0;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.15rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.3s ease;
+  line-height: 1;
+}
+
+.btn-tema:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: var(--shadow-glow);
 }
 
 .header::after {
@@ -210,6 +264,38 @@ body {
   background: rgba(212, 168, 67, 0.08);
 }
 
+.consulta-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  width: 100%;
+  max-width: 320px;
+}
+
+.consulta-divider::before,
+.consulta-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.btn-general {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  padding: 0.6rem 1.8rem;
+  border-color: var(--border-subtle);
+}
+
+.btn-general:hover:not(:disabled) {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
 .btn-lanzar {
   font-size: 1.2rem;
   padding: 1rem 2.5rem;
@@ -308,6 +394,62 @@ body {
   font-size: 0.9rem;
   color: var(--text-muted);
   letter-spacing: 0.1em;
+}
+
+/* ---- Coins Visual ---- */
+.coins-visual {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coins-row {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.coin {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid var(--border-active);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition: background 0.4s, box-shadow 0.4s, border-color 0.4s;
+}
+
+.coin-face {
+  font-size: 1.3rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.coin-yang {
+  background: rgba(212, 168, 67, 0.15);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: 0 0 12px rgba(212, 168, 67, 0.25);
+}
+
+.coin-yin {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.coin-spinning {
+  background: rgba(212, 168, 67, 0.06);
+  border-color: var(--border-active);
+  animation: coinFlip 0.9s ease-in-out;
+}
+
+@keyframes coinFlip {
+  0%   { transform: perspective(300px) rotateY(0deg); }
+  100% { transform: perspective(300px) rotateY(720deg); }
 }
 
 .moneda-resultado {

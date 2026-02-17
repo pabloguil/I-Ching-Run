@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 
-export default function QuestionForm({ pregunta, setPregunta, onConfirmar }) {
+export default function QuestionForm({ pregunta, setPregunta, onConfirmar, onConsultaGeneral }) {
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -42,6 +42,14 @@ export default function QuestionForm({ pregunta, setPregunta, onConfirmar }) {
         disabled={!pregunta.trim()}
       >
         Consultar el Oráculo
+      </button>
+
+      <div className="consulta-divider">
+        <span>o</span>
+      </div>
+
+      <button className="btn btn-general" onClick={onConsultaGeneral}>
+        Consulta General
       </button>
     </div>
   );

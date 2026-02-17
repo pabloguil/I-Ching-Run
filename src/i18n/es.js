@@ -42,7 +42,7 @@ export default {
   'oracle.label': '✦ Voz del Oráculo',
   'oracle.consult': 'Consultar al Oráculo',
 
-  // History
+  // History (footer legacy)
   'history.title': 'Historial de Consultas',
   'history.clear': 'Limpiar',
   'history.confirmClear': '¿Limpiar todo el historial de consultas?',
@@ -53,6 +53,47 @@ export default {
   'history.clearError': 'Error al limpiar historial',
   'history.show': 'Ver Historial',
   'history.hide': 'Ocultar Historial',
+
+  // Auth
+  'auth.login': 'Iniciar Sesión',
+  'auth.signup': 'Crear Cuenta',
+  'auth.loginBtn': 'Entrar',
+  'auth.signupBtn': 'Registrarse',
+  'auth.emailPlaceholder': 'correo@ejemplo.com',
+  'auth.passwordPlaceholder': 'Contraseña (mín. 6 caracteres)',
+  'auth.noAccount': '¿No tienes cuenta?',
+  'auth.hasAccount': '¿Ya tienes cuenta?',
+  'auth.signupLink': 'Regístrate',
+  'auth.loginLink': 'Inicia sesión',
+  'auth.checkEmail': 'Revisa tu correo para confirmar tu cuenta.',
+  'auth.ok': 'Entendido',
+  'auth.logout': 'Cerrar sesión',
+  'auth.greeting': 'Hola',
+  'auth.loginPrompt': 'Inicia sesión para sincronizar tu historial en la nube',
+
+  // Sidebar
+  'sidebar.title': 'Consultas',
+  'sidebar.favorites': 'Favoritos',
+  'sidebar.recent': 'Recientes',
+  'sidebar.viewAll': 'Ver historial completo',
+
+  // History page
+  'historyPage.title': 'Historial Completo',
+  'historyPage.back': 'Volver',
+  'historyPage.search': 'Buscar por pregunta, hexagrama o nota...',
+  'historyPage.onlyFav': 'Solo favoritos',
+  'historyPage.hexNum': 'Hex #',
+  'historyPage.exportJSON': 'Exportar JSON',
+  'historyPage.exportCSV': 'Exportar CSV',
+  'historyPage.count': '{n} consultas',
+  'historyPage.toggleFav': 'Favorito',
+  'historyPage.editNote': 'Editar nota',
+  'historyPage.delete': 'Eliminar',
+  'historyPage.confirmDelete': '¿Eliminar esta consulta?',
+  'historyPage.notePlaceholder': 'Escribe tu reflexión personal...',
+  'historyPage.saveNote': 'Guardar',
+  'historyPage.cancel': 'Cancelar',
+  'historyPage.noteLabel': 'Nota: ',
 
   // Actions
   'action.newConsultation': 'Nueva Consulta',

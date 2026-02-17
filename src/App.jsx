@@ -1,11 +1,15 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useI18n } from './i18n/index.jsx';
+import { useAuth } from './contexts/AuthContext.jsx';
+import { useHistory } from './hooks/useHistory.js';
 import QuestionForm from './components/QuestionForm';
 import CoinToss from './components/CoinToss';
 import HexagramDisplay from './components/HexagramDisplay';
 import Interpretation from './components/Interpretation';
 import AiOracle from './components/AiOracle';
-import History from './components/History';
+import AuthModal from './components/AuthModal';
+import HistorySidebar from './components/HistorySidebar';
+import HistoryPage from './components/HistoryPage';
 import { KING_WEN_MAPPING, HEXAGRAMS } from './data/hexagrams';
 import { HEXAGRAMS_EN } from './data/hexagrams-en';
 import {
@@ -30,14 +34,21 @@ function getHexagramaInfo(lineas, lang) {
 
 export default function App() {
   const { lang, setLang, t } = useI18n();
+  const { user, configured, logout } = useAuth();
+  const history = useHistory();
+
   const [pregunta, setPregunta] = useState('');
   const [preguntaConfirmada, setPreguntaConfirmada] = useState('');
   const [lineas, setLineas] = useState([]);
   const [ultimaMoneda, setUltimaMoneda] = useState(null);
   const [fase, setFase] = useState('pregunta'); // 'pregunta' | 'lanzando' | 'resultado'
   const [animatingLine, setAnimatingLine] = useState(-1);
-  const [showHistory, setShowHistory] = useState(false);
-  const [historialKey, setHistorialKey] = useState(0);
+
+  // UI state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [vista, setVista] = useState('oracle'); // 'oracle' | 'historial'
+
   const [tema, setTema] = useState(() => {
     return localStorage.getItem('iching-tema') || 'dark';
   });
@@ -45,6 +56,13 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tema);
   }, [tema]);
+
+  // Sync local history to cloud on first login
+  useEffect(() => {
+    if (user) {
+      history.syncLocalToCloud();
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleTema = useCallback(() => {
     setTema((t) => {
@@ -80,11 +98,9 @@ export default function App() {
     setAnimatingLine(lineas.length);
     setLineas(nuevasLineas);
 
-    // Delay para la animacion
     setTimeout(() => setAnimatingLine(-1), 600);
 
     if (nuevasLineas.length === 6) {
-      // Guardar en la base de datos (siempre en español para consistencia)
       const original = getHexagramaInfo(nuevasLineas, 'es');
       const tieneMut = hayMutaciones(nuevasLineas);
       const mutadoLineas = calcularMutado(nuevasLineas);
@@ -92,6 +108,18 @@ export default function App() {
 
       setFase('resultado');
 
+      // Save to hybrid history (localStorage or Supabase)
+      history.guardarConsulta({
+        pregunta: preguntaConfirmada,
+        lineas: nuevasLineas,
+        hexOriginal: original?.numero,
+        nombreOriginal: original ? `${original.numero}. ${original.chino} - ${original.nombre}` : 'Desconocido',
+        hexMutado: mutado?.numero,
+        nombreMutado: mutado ? `${mutado.numero}. ${mutado.chino} - ${mutado.nombre}` : null,
+        tieneMutaciones: tieneMut,
+      });
+
+      // Also save to server DB (legacy, best-effort)
       try {
         await fetch('/api/consultas', {
           method: 'POST',
@@ -106,12 +134,11 @@ export default function App() {
             tieneMutaciones: tieneMut,
           }),
         });
-        setHistorialKey(k => k + 1);
       } catch {
-        // Silenciar errores de red - la app funciona sin backend
+        // Server not available — no problem
       }
     }
-  }, [lineas, preguntaConfirmada]);
+  }, [lineas, preguntaConfirmada, history]);
 
   const reiniciar = useCallback(() => {
     setPregunta('');
@@ -127,12 +154,60 @@ export default function App() {
   const tieneMutaciones_ = lineas.length === 6 && hayMutaciones(lineas);
   const hexMutado = tieneMutaciones_ ? getHexagramaInfo(calcularMutado(lineas), lang) : null;
 
+  // --- History Page view ---
+  if (vista === 'historial') {
+    return (
+      <div className="app">
+        <HistoryPage
+          consultas={history.consultas}
+          onToggleFav={history.toggleFavorito}
+          onUpdateNota={history.updateNota}
+          onDelete={history.eliminarConsulta}
+          onBack={() => setVista('oracle')}
+        />
+      </div>
+    );
+  }
+
+  // --- Main Oracle view ---
   return (
     <div className="app">
       <header className="header">
         <h1 className="title">易經</h1>
         <p className="subtitle">{t('app.subtitle')}</p>
         <div className="header-controls">
+          {/* Sidebar toggle */}
+          <button
+            className="btn-icon-header"
+            onClick={() => setShowSidebar(true)}
+            aria-label={t('sidebar.title')}
+            title={t('sidebar.title')}
+          >
+            &#9776;
+          </button>
+
+          {/* Auth button */}
+          {configured && (
+            user ? (
+              <button
+                className="btn-user"
+                onClick={logout}
+                title={t('auth.logout')}
+              >
+                {user.email?.charAt(0).toUpperCase() || '?'}
+              </button>
+            ) : (
+              <button
+                className="btn-icon-header"
+                onClick={() => setShowAuthModal(true)}
+                aria-label={t('auth.login')}
+                title={t('auth.login')}
+              >
+                &#128100;
+              </button>
+            )
+          )}
+
           <button
             className="btn-lang"
             onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
@@ -243,14 +318,27 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        <button
-          className="btn btn-historial"
-          onClick={() => setShowHistory(!showHistory)}
-        >
-          {showHistory ? t('history.hide') : t('history.show')}
-        </button>
-        {showHistory && <History key={historialKey} />}
+        {/* Cloud sync prompt for non-logged-in users */}
+        {configured && !user && (
+          <p className="cloud-prompt" onClick={() => setShowAuthModal(true)}>
+            {t('auth.loginPrompt')}
+          </p>
+        )}
       </footer>
+
+      {/* Modals & overlays */}
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+
+      {showSidebar && (
+        <HistorySidebar
+          consultas={history.consultas}
+          onSelect={() => {}}
+          onClose={() => setShowSidebar(false)}
+          onOpenFull={() => setVista('historial')}
+        />
+      )}
     </div>
   );
 }

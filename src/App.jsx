@@ -156,13 +156,52 @@ export default function App() {
 
         {fase !== 'pregunta' && (
           <>
-            {fase === 'lanzando' && preguntaConfirmada && (
+                {/* 1. Pregunta */}
+            {preguntaConfirmada && (
               <div className="pregunta-display">
                 <span className="pregunta-label">{t('question.yours')}</span>
                 <p className="pregunta-texto">{preguntaConfirmada}</p>
               </div>
             )}
 
+            {/* 2. Hexagramas — siempre visibles desde el inicio */}
+            <div className="hexagramas-container">
+              <div className="hexagrama-section">
+                <h3 className="section-title">{t('hex.original')}</h3>
+                <HexagramDisplay
+                  lineas={lineas}
+                  lineasMutantes={lineasMutantes}
+                  animatingLine={animatingLine}
+                />
+                {hexOriginal && (
+                  <p className="hexagrama-nombre">
+                    {hexOriginal.numero}. {hexOriginal.chino} &mdash; {hexOriginal.nombre}
+                  </p>
+                )}
+              </div>
+
+              {tieneMutaciones ? (
+                <div className="hexagrama-section mutado">
+                  <h3 className="section-title">{t('hex.transformed')}</h3>
+                  <HexagramDisplay
+                    lineas={calcularMutado(lineas)}
+                    lineasMutantes={lineasMutantes}
+                    esMutado
+                  />
+                  {hexMutado && (
+                    <p className="hexagrama-nombre">
+                      {hexMutado.numero}. {hexMutado.chino} &mdash; {hexMutado.nombre}
+                    </p>
+                  )}
+                </div>
+              ) : fase === 'resultado' ? (
+                <div className="hexagrama-section sin-mutacion">
+                  <p className="sin-mutaciones-texto">{t('hex.noChanges')}</p>
+                </div>
+              ) : null}
+            </div>
+
+            {/* 3. Monedas + resultado + botón */}
             <CoinToss
               lineas={lineas}
               ultimaMoneda={ultimaMoneda}
@@ -171,44 +210,7 @@ export default function App() {
               animatingLine={animatingLine}
             />
 
-            {lineas.length > 0 && (
-              <div className="hexagramas-container">
-                <div className="hexagrama-section">
-                  <h3 className="section-title">{t('hex.original')}</h3>
-                  <HexagramDisplay
-                    lineas={lineas}
-                    lineasMutantes={lineasMutantes}
-                    animatingLine={animatingLine}
-                  />
-                  {hexOriginal && (
-                    <p className="hexagrama-nombre">
-                      {hexOriginal.numero}. {hexOriginal.chino} &mdash; {hexOriginal.nombre}
-                    </p>
-                  )}
-                </div>
-
-                {tieneMutaciones && hexMutado && (
-                  <div className="hexagrama-section mutado">
-                    <h3 className="section-title">{t('hex.transformed')}</h3>
-                    <HexagramDisplay
-                      lineas={calcularMutado(lineas)}
-                      lineasMutantes={lineasMutantes}
-                      esMutado
-                    />
-                    <p className="hexagrama-nombre">
-                      {hexMutado.numero}. {hexMutado.chino} &mdash; {hexMutado.nombre}
-                    </p>
-                  </div>
-                )}
-
-                {!tieneMutaciones && lineas.length === 6 && (
-                  <div className="hexagrama-section mutado sin-mutacion">
-                    <p className="sin-mutaciones-texto">{t('hex.noChanges')}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
+            {/* 4. Interpretación + IA (solo en resultado) */}
             {fase === 'resultado' && hexOriginal && (
               <Interpretation
                 hexOriginal={hexOriginal}

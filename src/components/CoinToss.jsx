@@ -54,20 +54,6 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
         {t('coins.count', { count: lineas.length })}
       </div>
 
-      {!completado && (
-        <button
-          className="btn btn-lanzar"
-          onClick={handleLanzar}
-          disabled={isSpinning}
-        >
-          <span className="coin-icons">☰</span>
-          {isSpinning ? t('coins.casting') : t('coins.cast')}
-          {!isSpinning && (
-            <span className="linea-num">{t('coins.line', { num: lineas.length + 1 })}</span>
-          )}
-        </button>
-      )}
-
       <div className="coins-visual">
         {(isSpinning || shownMonedas) && (
           <div className="coins-row">
@@ -108,6 +94,20 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
             {ultimaMoneda.valor} &mdash; {t(`coins.${ultimaMoneda.valor}`)}
           </span>
         </div>
+      )}
+
+      {!completado && (
+        <button
+          className="btn btn-lanzar"
+          onClick={handleLanzar}
+          disabled={isSpinning}
+        >
+          <span className="coin-icons">☰</span>
+          {isSpinning ? t('coins.casting') : t('coins.cast')}
+          {!isSpinning && (
+            <span className="linea-num">{t('coins.line', { num: lineas.length + 1 })}</span>
+          )}
+        </button>
       )}
 
       {lineas.length > 0 && (

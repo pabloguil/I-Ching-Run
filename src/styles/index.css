@@ -23,6 +23,8 @@
   --shadow-glow: 0 0 40px rgba(212, 168, 67, 0.06);
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
 
+  --hex-line-color: #e8dcc8;    /* Papel de arroz — visible sobre fondo oscuro */
+
   /* Typography */
   --font-serif: 'Crimson Pro', 'Noto Serif SC', 'Georgia', serif;
   --font-chinese: 'Noto Serif SC', serif;
@@ -56,6 +58,8 @@
 
   --shadow-glow: 0 0 40px rgba(139, 101, 8, 0.08);
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.1);
+
+  --hex-line-color: #3a2e1a;    /* Marrón oscuro — contrasta sobre fondo claro */
 }
 
 [data-theme="light"] body {
@@ -1602,8 +1606,16 @@ body {
   }
 
   .hexagramas-container {
-    flex-direction: column;
-    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .hexagram-svg-container {
+    width: 140px;
+  }
+
+  .hexagram-svg {
+    width: 140px;
+    height: 140px;
   }
 
   .btn-lanzar {

@@ -21,9 +21,9 @@ export default function HexagramDisplay({ lineas, lineasMutantes = [], animating
   const topMargin = 18;
   const lineSpacing = 29;
 
-  const normalColor = '#e8dcc8';    // Papel de arroz
-  const mutantColor = '#c0392b';    // Rojo cinabrio
-  const mutadoColor = '#d4a843';    // Dorado
+  const normalColor = 'var(--hex-line-color)';  // Controlado por tema (CSS var)
+  const mutantColor = '#c0392b';                // Rojo cinabrio
+  const mutadoColor = '#d4a843';                // Dorado
 
   const renderLineas = () => {
     const elements = [];

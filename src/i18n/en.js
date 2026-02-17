@@ -41,6 +41,9 @@ export default {
   // Oracle AI
   'oracle.label': '✦ Voice of the Oracle',
   'oracle.consult': 'Consult the Oracle',
+  'oracle.cancel': 'Cancel',
+  'oracle.timeout': 'Request timed out. Please try again.',
+  'oracle.interrupted': 'Interrupted.',
 
   // History (footer legacy)
   'history.title': 'Consultation History',

@@ -41,6 +41,9 @@ export default {
   // Oracle AI
   'oracle.label': '✦ Voz del Oráculo',
   'oracle.consult': 'Consultar al Oráculo',
+  'oracle.cancel': 'Interrumpir',
+  'oracle.timeout': 'La consulta tardó demasiado. Inténtalo de nuevo.',
+  'oracle.interrupted': 'Interrumpido.',
 
   // History (footer legacy)
   'history.title': 'Historial de Consultas',

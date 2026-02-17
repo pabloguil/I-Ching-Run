@@ -8,7 +8,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+
+// --- Validate env vars at startup ---
+const PORT_RAW = process.env.PORT;
+const PORT = PORT_RAW ? parseInt(PORT_RAW) : 3001;
+if (PORT_RAW && (isNaN(PORT) || PORT < 1 || PORT > 65535)) {
+  console.error(`[ERROR] PORT="${PORT_RAW}" no es un número de puerto válido. Usando 3001.`);
+}
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('[WARN] OPENAI_API_KEY no configurada — /api/oraculo devolvera 503');
+}
+if (process.env.NODE_ENV === 'production' && !process.env.ALLOWED_ORIGINS) {
+  console.warn('[WARN] ALLOWED_ORIGINS no definida en producción — CORS solo permite localhost');
+}
+
+// Supabase config for server-side token verification (optional)
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn('[WARN] SUPABASE_URL / SUPABASE_ANON_KEY no configuradas — DELETE /api/consultas requiere auth y devolverá 403');
+}
 
 // --- CORS ---
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -159,6 +179,49 @@ if (existsSync(distPath)) {
   app.use(express.static(distPath));
 }
 
+// --- Auth helpers ---
+
+/**
+ * Verifica un JWT de Supabase consultando su endpoint /auth/v1/user.
+ * Devuelve el usuario si el token es válido, null en caso contrario.
+ */
+async function verifySupabaseToken(token) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Middleware que exige un Bearer token válido de Supabase.
+ * Si Supabase no está configurado, devuelve 403.
+ */
+async function requireAuth(req, res, next) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return res.status(403).json({ error: 'Operación no permitida: autenticación no configurada en el servidor' });
+  }
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Autenticación requerida' });
+  }
+  const token = authHeader.slice(7);
+  const user = await verifySupabaseToken(token);
+  if (!user) {
+    return res.status(401).json({ error: 'Token inválido o expirado' });
+  }
+  req.authUser = user;
+  next();
+}
+
 // --- API Routes ---
 
 // Health check — solo disponible fuera de producción
@@ -225,8 +288,8 @@ app.get('/api/consultas', async (req, res) => {
   }
 });
 
-// Limpiar historial
-app.delete('/api/consultas', deleteLimiter, async (req, res) => {
+// Limpiar historial — requiere autenticación
+app.delete('/api/consultas', deleteLimiter, requireAuth, async (req, res) => {
   try {
     const db = await getDB();
     db.limpiarHistorial();

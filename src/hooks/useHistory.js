@@ -174,8 +174,13 @@ export function useHistory() {
     if (!isCloud) return;
     const local = loadLocal();
     if (local.length === 0) return;
-    try {
-      for (const c of local) {
+
+    // Insert each item individually, tracking failures.
+    // Only items that succeed are removed from localStorage — this avoids
+    // data loss if a partial failure occurs mid-sync.
+    const failed = [];
+    for (const c of local) {
+      try {
         await dbInsert('consultas', {
           user_id: user.id,
           pregunta: c.pregunta || '',
@@ -187,12 +192,19 @@ export function useHistory() {
           tiene_mutaciones: c.tiene_mutaciones ?? c.tieneMutaciones ?? false,
           created_at: c.created_at,
         }, session);
+      } catch {
+        failed.push(c);
       }
-      localStorage.removeItem(LS_KEY);
-      await fetchConsultas();
-    } catch {
-      // Keep local data if sync fails
     }
+
+    if (failed.length === 0) {
+      localStorage.removeItem(LS_KEY);
+    } else {
+      // Keep only the items that failed — they will retry on the next login
+      saveLocal(failed);
+    }
+
+    await fetchConsultas();
   }, [isCloud, session, user, fetchConsultas]);
 
   return {

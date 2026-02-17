@@ -30,6 +30,10 @@ export default {
   'hex.noChanges': 'No changing lines',
   'hex.changingLegend': 'changing line',
   'hex.transformedLegend': 'transformed line',
+  'hex.ariaOriginal': 'Original hexagram',
+  'hex.ariaTransformed': 'Transformed hexagram',
+  'hex.ariaLines': 'lines',
+  'hex.ariaChangingLines': 'Lines {nums} changing',
 
   // Interpretation
   'interp.title': 'Interpretation',

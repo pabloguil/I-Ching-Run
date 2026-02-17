@@ -30,6 +30,30 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.warn('[WARN] SUPABASE_URL / SUPABASE_ANON_KEY no configuradas — DELETE /api/consultas requiere auth y devolverá 403');
 }
 
+// --- Security headers (CSP + misc) ---
+app.use((req, res, next) => {
+  // Supabase URL para la directiva connect-src
+  const supabaseOrigin = SUPABASE_URL ? new URL(SUPABASE_URL).origin : '';
+  const connectSrc = supabaseOrigin
+    ? `'self' ${supabaseOrigin}`
+    : "'self'";
+
+  res.setHeader('Content-Security-Policy', [
+    `default-src 'self'`,
+    `script-src 'self'`,
+    `style-src 'self' 'unsafe-inline'`,   // unsafe-inline necesario para estilos de React
+    `connect-src ${connectSrc}`,
+    `img-src 'self' data: blob:`,
+    `font-src 'self'`,
+    `frame-ancestors 'none'`,
+  ].join('; '));
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
 // --- CORS ---
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())

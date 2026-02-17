@@ -252,7 +252,7 @@ export default function App() {
       {showSidebar && (
         <HistorySidebar
           consultas={history.consultas}
-          onSelect={() => {}}
+          onSelect={() => setVista('historial')}
           onClose={() => setShowSidebar(false)}
           onOpenFull={() => setVista('historial')}
         />

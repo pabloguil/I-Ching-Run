@@ -111,13 +111,27 @@ export default function HexagramDisplay({ lineas, lineasMutantes = [], animating
   const swatchColor = esMutado ? mutadoColor : mutantColor;
   const legendLabel = esMutado ? t('hex.transformedLegend') : t('hex.changingLegend');
 
+  // Construir aria-label descriptivo para lectores de pantalla
+  const buildAriaLabel = () => {
+    const type = esMutado ? t('hex.ariaTransformed') : t('hex.ariaOriginal');
+    const lineCount = lineas.length;
+    if (lineCount < 6) return `${type}: ${lineCount}/6 ${t('hex.ariaLines')}`;
+    const base = `${type}: ${lineCount} ${t('hex.ariaLines')}`;
+    if (lineasMutantes.length > 0) {
+      const nums = lineasMutantes.map(i => i + 1).join(', ');
+      const changing = t('hex.ariaChangingLines').replace('{nums}', nums);
+      return `${base}. ${changing}.`;
+    }
+    return `${base}.`;
+  };
+
   return (
     <div className="hexagram-svg-container">
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="hexagram-svg"
         role="img"
-        aria-label={t('hex.ariaLabel')}
+        aria-label={buildAriaLabel()}
       >
         {renderLineas()}
       </svg>

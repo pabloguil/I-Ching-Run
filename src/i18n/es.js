@@ -30,6 +30,10 @@ export default {
   'hex.noChanges': 'Sin mutaciones',
   'hex.changingLegend': 'línea mutante',
   'hex.transformedLegend': 'línea transformada',
+  'hex.ariaOriginal': 'Hexagrama original',
+  'hex.ariaTransformed': 'Hexagrama transformado',
+  'hex.ariaLines': 'líneas',
+  'hex.ariaChangingLines': 'Líneas {nums} en mutación',
 
   // Interpretation
   'interp.title': 'Interpretación',

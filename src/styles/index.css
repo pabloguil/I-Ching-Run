@@ -836,6 +836,24 @@ body {
   background: rgba(139, 101, 8, 0.08);
 }
 
+.btn-oracle-cancel {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+}
+
+.btn-oracle-cancel:hover {
+  border-color: var(--text-muted);
+  color: var(--text-secondary);
+}
+
 .ai-oracle-loading {
   display: flex;
   justify-content: center;

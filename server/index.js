@@ -10,8 +10,124 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
-app.use(express.json());
+// --- CORS ---
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://localhost:3001'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow same-origin requests (no origin header) and whitelisted origins
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('CORS: origin not allowed'));
+  },
+  credentials: true,
+}));
+
+// Limit payload size to 16 KB
+app.use(express.json({ limit: '16kb' }));
+
+// --- Simple in-memory rate limiter (no external deps) ---
+const rateLimitStore = new Map();
+
+// Prune expired entries every 5 minutes to avoid memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of rateLimitStore) {
+    if (now > record.resetTime) rateLimitStore.delete(key);
+  }
+}, 5 * 60 * 1000);
+
+function createRateLimiter({ windowMs, max, message }) {
+  return (req, res, next) => {
+    const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const record = rateLimitStore.get(ip) || { count: 0, resetTime: now + windowMs };
+
+    if (now > record.resetTime) {
+      record.count = 0;
+      record.resetTime = now + windowMs;
+    }
+    record.count++;
+    rateLimitStore.set(ip, record);
+
+    if (record.count > max) {
+      return res.status(429).json({ error: message || 'Demasiadas peticiones. Inténtalo más tarde.' });
+    }
+    next();
+  };
+}
+
+const oraculoLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: 'Has consultado el oráculo demasiadas veces. Espera unos minutos.',
+});
+
+const consultasWriteLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'Demasiadas consultas guardadas. Inténtalo más tarde.',
+});
+
+const deleteLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: 'Operación no permitida. Inténtalo en un rato.',
+});
+
+// --- Input validators ---
+function validateConsultaBody(body) {
+  const { pregunta, lineas, hexOriginal, nombreOriginal, hexMutado, nombreMutado } = body;
+
+  if (typeof pregunta !== 'string' || pregunta.length > 1000) {
+    return 'pregunta debe ser texto de máximo 1000 caracteres';
+  }
+  if (!Array.isArray(lineas) || lineas.length !== 6) {
+    return 'lineas debe ser un array de 6 elementos';
+  }
+  if (!lineas.every(v => [6, 7, 8, 9].includes(v))) {
+    return 'lineas solo puede contener valores 6, 7, 8 o 9';
+  }
+  if (typeof hexOriginal !== 'number' || hexOriginal < 1 || hexOriginal > 64) {
+    return 'hexOriginal debe ser un número entre 1 y 64';
+  }
+  if (typeof nombreOriginal !== 'string' || nombreOriginal.length > 200) {
+    return 'nombreOriginal debe ser texto de máximo 200 caracteres';
+  }
+  if (hexMutado !== undefined && hexMutado !== null) {
+    if (typeof hexMutado !== 'number' || hexMutado < 1 || hexMutado > 64) {
+      return 'hexMutado debe ser un número entre 1 y 64';
+    }
+  }
+  if (nombreMutado !== undefined && nombreMutado !== null) {
+    if (typeof nombreMutado !== 'string' || nombreMutado.length > 200) {
+      return 'nombreMutado debe ser texto de máximo 200 caracteres';
+    }
+  }
+  return null;
+}
+
+function validateOraculoBody(body) {
+  const { pregunta, hexagrama, nombreHexagrama, juicio, imagen } = body;
+
+  if (pregunta !== undefined && (typeof pregunta !== 'string' || pregunta.length > 1000)) {
+    return 'pregunta debe ser texto de máximo 1000 caracteres';
+  }
+  if (typeof hexagrama !== 'number' || hexagrama < 1 || hexagrama > 64) {
+    return 'hexagrama debe ser un número entre 1 y 64';
+  }
+  if (typeof nombreHexagrama !== 'string' || nombreHexagrama.length > 200) {
+    return 'nombreHexagrama inválido';
+  }
+  if (typeof juicio !== 'string' || juicio.length > 2000) {
+    return 'juicio inválido';
+  }
+  if (typeof imagen !== 'string' || imagen.length > 2000) {
+    return 'imagen inválido';
+  }
+  return null;
+}
 
 // En produccion, manejar archivos estáticos con MIME types correctos
 const distPath = join(__dirname, '..', 'dist');
@@ -45,8 +161,11 @@ if (existsSync(distPath)) {
 
 // --- API Routes ---
 
-// Health check / debug endpoint
+// Health check — solo disponible fuera de producción
 app.get('/api/health', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   let distFiles = [];
   let assetsFiles = [];
   try {
@@ -59,13 +178,10 @@ app.get('/api/health', (req, res) => {
 
   res.json({
     status: 'ok',
-    nodeVersion: process.version,
     nodeEnv: process.env.NODE_ENV,
     distExists: existsSync(distPath),
     distFiles,
     assetsFiles,
-    cwd: process.cwd(),
-    distPath
   });
 });
 
@@ -79,18 +195,20 @@ async function getDB() {
 }
 
 // Guardar una consulta
-app.post('/api/consultas', async (req, res) => {
+app.post('/api/consultas', consultasWriteLimiter, async (req, res) => {
+  const validationError = validateConsultaBody(req.body);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+
   try {
     const db = await getDB();
     const { pregunta, lineas, hexOriginal, nombreOriginal, hexMutado, nombreMutado, tieneMutaciones } = req.body;
-    if (!pregunta || !lineas || !hexOriginal || !nombreOriginal) {
-      return res.status(400).json({ error: 'Faltan campos requeridos' });
-    }
     const result = db.guardarConsulta({ pregunta, lineas, hexOriginal, nombreOriginal, hexMutado, nombreMutado, tieneMutaciones });
     res.json({ id: result.lastInsertRowid, success: true });
   } catch (err) {
     console.error('Error saving consulta:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Error interno al guardar la consulta' });
   }
 });
 
@@ -98,32 +216,37 @@ app.post('/api/consultas', async (req, res) => {
 app.get('/api/consultas', async (req, res) => {
   try {
     const db = await getDB();
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
     const consultas = db.obtenerHistorial(limit);
     res.json(consultas);
   } catch (err) {
     console.error('Error getting historial:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Error interno al obtener el historial' });
   }
 });
 
 // Limpiar historial
-app.delete('/api/consultas', async (req, res) => {
+app.delete('/api/consultas', deleteLimiter, async (req, res) => {
   try {
     const db = await getDB();
     db.limpiarHistorial();
     res.json({ success: true });
   } catch (err) {
     console.error('Error clearing historial:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Error interno al limpiar el historial' });
   }
 });
 
 // Oráculo IA — streaming con OpenAI
-app.post('/api/oraculo', async (req, res) => {
+app.post('/api/oraculo', oraculoLimiter, async (req, res) => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(503).json({ error: 'OPENAI_API_KEY no configurada en el servidor' });
+  }
+
+  const validationError = validateOraculoBody(req.body);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
   }
 
   const { lang, pregunta, hexagrama, nombreHexagrama, juicio, imagen, hexMutado, nombreMutado, lineasMutantes } = req.body;
@@ -189,7 +312,6 @@ Ofrece una interpretación profunda y personalizada de este oráculo en relació
     });
 
     if (!openaiRes.ok) {
-      const errText = await openaiRes.text().catch(() => '');
       res.write(`data: ${JSON.stringify({ error: `Error de OpenAI (${openaiRes.status})` })}\n\n`);
       res.end();
       return;

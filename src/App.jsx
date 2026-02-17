@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useI18n } from './i18n/index.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
 import { useHistory } from './hooks/useHistory.js';
+import { useOracle } from './hooks/useOracle.js';
 import QuestionForm from './components/QuestionForm';
 import CoinToss from './components/CoinToss';
 import HexagramDisplay from './components/HexagramDisplay';
@@ -10,41 +11,14 @@ import AiOracle from './components/AiOracle';
 import AuthModal from './components/AuthModal';
 import HistorySidebar from './components/HistorySidebar';
 import HistoryPage from './components/HistoryPage';
-import { KING_WEN_MAPPING, HEXAGRAMS } from './data/hexagrams';
-import { HEXAGRAMS_EN } from './data/hexagrams-en';
-import {
-  hashPregunta,
-  generarLinea,
-  getPatron,
-  calcularMutado,
-  getLineasMutantes,
-  hayMutaciones,
-} from './utils/randomness';
-
-function getHexagramaInfo(lineas, lang) {
-  const patron = getPatron(lineas);
-  const num = KING_WEN_MAPPING[patron];
-  if (!num) return null;
-  const base = { ...HEXAGRAMS[num], numero: num };
-  if (lang === 'en' && HEXAGRAMS_EN[num]) {
-    return { ...base, ...HEXAGRAMS_EN[num] };
-  }
-  return base;
-}
+import { calcularMutado } from './utils/randomness';
 
 export default function App() {
   const { lang, setLang, t } = useI18n();
   const { user, configured, logout } = useAuth();
   const history = useHistory();
 
-  const [pregunta, setPregunta] = useState('');
-  const [preguntaConfirmada, setPreguntaConfirmada] = useState('');
-  const [lineas, setLineas] = useState([]);
-  const [ultimaMoneda, setUltimaMoneda] = useState(null);
-  const [fase, setFase] = useState('pregunta'); // 'pregunta' | 'lanzando' | 'resultado'
-  const [animatingLine, setAnimatingLine] = useState(-1);
-
-  // UI state
+  // UI state (no relacionado con el oráculo)
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [vista, setVista] = useState('oracle'); // 'oracle' | 'historial'
@@ -72,87 +46,31 @@ export default function App() {
     });
   }, []);
 
-  const confirmarPregunta = useCallback(() => {
-    if (!pregunta.trim()) return;
-    setPreguntaConfirmada(pregunta.trim());
-    setFase('lanzando');
-    setLineas([]);
-    setUltimaMoneda(null);
-  }, [pregunta]);
+  // Callback de persistencia que recibe el oráculo al completar 6 líneas
+  const handleGuardarConsulta = useCallback(async (consulta) => {
+    // Guardar en historial híbrido (localStorage o Supabase)
+    history.guardarConsulta(consulta);
 
-  const consultaGeneral = useCallback(() => {
-    setPreguntaConfirmada('');
-    setFase('lanzando');
-    setLineas([]);
-    setUltimaMoneda(null);
-  }, []);
-
-  const lanzarMonedas = useCallback(async () => {
-    if (lineas.length >= 6) return;
-
-    const qHash = hashPregunta(preguntaConfirmada);
-    const resultado = await generarLinea(qHash);
-    const nuevasLineas = [...lineas, resultado.valor];
-
-    setUltimaMoneda(resultado);
-    setAnimatingLine(lineas.length);
-    setLineas(nuevasLineas);
-
-    setTimeout(() => setAnimatingLine(-1), 600);
-
-    if (nuevasLineas.length === 6) {
-      const original = getHexagramaInfo(nuevasLineas, 'es');
-      const tieneMut = hayMutaciones(nuevasLineas);
-      const mutadoLineas = calcularMutado(nuevasLineas);
-      const mutado = tieneMut ? getHexagramaInfo(mutadoLineas, 'es') : null;
-
-      setFase('resultado');
-
-      // Save to hybrid history (localStorage or Supabase)
-      history.guardarConsulta({
-        pregunta: preguntaConfirmada,
-        lineas: nuevasLineas,
-        hexOriginal: original?.numero,
-        nombreOriginal: original ? `${original.numero}. ${original.chino} - ${original.nombre}` : 'Desconocido',
-        hexMutado: mutado?.numero,
-        nombreMutado: mutado ? `${mutado.numero}. ${mutado.chino} - ${mutado.nombre}` : null,
-        tieneMutaciones: tieneMut,
+    // Guardar en BD del servidor (legado, best-effort)
+    try {
+      await fetch('/api/consultas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(consulta),
       });
-
-      // Also save to server DB (legacy, best-effort)
-      try {
-        await fetch('/api/consultas', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            pregunta: preguntaConfirmada,
-            lineas: nuevasLineas,
-            hexOriginal: original?.numero,
-            nombreOriginal: original ? `${original.numero}. ${original.chino} - ${original.nombre}` : 'Desconocido',
-            hexMutado: mutado?.numero,
-            nombreMutado: mutado ? `${mutado.numero}. ${mutado.chino} - ${mutado.nombre}` : null,
-            tieneMutaciones: tieneMut,
-          }),
-        });
-      } catch {
-        // Server not available — no problem
-      }
+    } catch {
+      // Servidor no disponible — la consulta se guardó igualmente en el historial
     }
-  }, [lineas, preguntaConfirmada, history]);
+  }, [history]);
 
-  const reiniciar = useCallback(() => {
-    setPregunta('');
-    setPreguntaConfirmada('');
-    setLineas([]);
-    setUltimaMoneda(null);
-    setFase('pregunta');
-    setAnimatingLine(-1);
-  }, []);
+  const oracle = useOracle({ onGuardarConsulta: handleGuardarConsulta });
 
-  const hexOriginal = lineas.length === 6 ? getHexagramaInfo(lineas, lang) : null;
-  const lineasMutantes = lineas.length === 6 ? getLineasMutantes(lineas) : [];
-  const tieneMutaciones_ = lineas.length === 6 && hayMutaciones(lineas);
-  const hexMutado = tieneMutaciones_ ? getHexagramaInfo(calcularMutado(lineas), lang) : null;
+  const {
+    pregunta, setPregunta, preguntaConfirmada,
+    lineas, ultimaMoneda, fase, animatingLine,
+    hexOriginal, hexMutado, lineasMutantes, tieneMutaciones,
+    confirmarPregunta, consultaGeneral, lanzarMonedas, reiniciar,
+  } = oracle;
 
   // --- History Page view ---
   if (vista === 'historial') {
@@ -269,7 +187,7 @@ export default function App() {
                   )}
                 </div>
 
-                {tieneMutaciones_ && hexMutado && (
+                {tieneMutaciones && hexMutado && (
                   <div className="hexagrama-section mutado">
                     <h3 className="section-title">{t('hex.transformed')}</h3>
                     <HexagramDisplay
@@ -283,7 +201,7 @@ export default function App() {
                   </div>
                 )}
 
-                {!tieneMutaciones_ && lineas.length === 6 && (
+                {!tieneMutaciones && lineas.length === 6 && (
                   <div className="hexagrama-section mutado sin-mutacion">
                     <p className="sin-mutaciones-texto">{t('hex.noChanges')}</p>
                   </div>

@@ -10,14 +10,14 @@ import React from 'react';
  * Mutante: se muestra en rojo/dorado
  */
 export default function HexagramDisplay({ lineas, lineasMutantes = [], animatingLine = -1, esMutado = false }) {
-  const width = 200;
-  const height = 240;
-  const segmentLength = 80;
-  const gapLength = 24;
-  const lineWidth = 12;
-  const leftMargin = 18;
-  const topMargin = 25;
-  const lineSpacing = 36;
+  const width = 180;
+  const height = 180;
+  const segmentLength = 68;
+  const gapLength = 20;
+  const lineWidth = 10;
+  const leftMargin = 14;
+  const topMargin = 18;
+  const lineSpacing = 29;
 
   const normalColor = '#e8dcc8';    // Papel de arroz
   const mutantColor = '#c0392b';    // Rojo cinabrio

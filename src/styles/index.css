@@ -1530,6 +1530,17 @@ body {
   color: var(--accent-red);
 }
 
+.hf-body {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 2px 0;
+  transition: background 0.2s;
+}
+
+.hf-body:hover {
+  background: var(--bg-card-hover);
+}
+
 .hf-question {
   font-size: 0.92rem;
   font-style: italic;
@@ -1539,6 +1550,11 @@ body {
 
 .hf-result {
   font-size: 0.85rem;
+}
+
+.consulta-historial-fecha {
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 .hf-nota {

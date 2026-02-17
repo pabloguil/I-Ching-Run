@@ -11,6 +11,7 @@ import AiOracle from './components/AiOracle';
 import AuthModal from './components/AuthModal';
 import HistorySidebar from './components/HistorySidebar';
 import HistoryPage from './components/HistoryPage';
+import ConsultaHistorialView from './components/ConsultaHistorialView';
 import { calcularMutado } from './utils/randomness';
 
 export default function App() {
@@ -21,7 +22,15 @@ export default function App() {
   // UI state (no relacionado con el oráculo)
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [vista, setVista] = useState('oracle'); // 'oracle' | 'historial'
+  const [vista, setVista] = useState('oracle'); // 'oracle' | 'historial' | 'consulta'
+  const [consultaActiva, setConsultaActiva] = useState(null);
+  const [vistaPrevia, setVistaPrevia] = useState('oracle');
+
+  const verConsulta = useCallback((consulta, desde = 'oracle') => {
+    setConsultaActiva(consulta);
+    setVistaPrevia(desde);
+    setVista('consulta');
+  }, []);
 
   const [tema, setTema] = useState(() => {
     return localStorage.getItem('iching-tema') || 'dark';
@@ -72,6 +81,16 @@ export default function App() {
     confirmarPregunta, consultaGeneral, lanzarMonedas, reiniciar,
   } = oracle;
 
+  // --- Consulta Historial view ---
+  if (vista === 'consulta' && consultaActiva) {
+    return (
+      <ConsultaHistorialView
+        consulta={consultaActiva}
+        onBack={() => setVista(vistaPrevia)}
+      />
+    );
+  }
+
   // --- History Page view ---
   if (vista === 'historial') {
     return (
@@ -81,6 +100,7 @@ export default function App() {
           onToggleFav={history.toggleFavorito}
           onUpdateNota={history.updateNota}
           onDelete={history.eliminarConsulta}
+          onSelect={(c) => verConsulta(c, 'historial')}
           onBack={() => setVista('oracle')}
         />
       </div>
@@ -254,9 +274,9 @@ export default function App() {
       {showSidebar && (
         <HistorySidebar
           consultas={history.consultas}
-          onSelect={() => setVista('historial')}
+          onSelect={(c) => { verConsulta(c, 'oracle'); setShowSidebar(false); }}
           onClose={() => setShowSidebar(false)}
-          onOpenFull={() => setVista('historial')}
+          onOpenFull={() => { setVista('historial'); setShowSidebar(false); }}
         />
       )}
     </div>

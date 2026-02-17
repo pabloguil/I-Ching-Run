@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useI18n } from '../i18n/index.jsx';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function HistoryPage({ consultas, onToggleFav, onUpdateNota, onDelete, onBack }) {
+export default function HistoryPage({ consultas, onToggleFav, onUpdateNota, onDelete, onSelect, onBack }) {
   const { lang, t } = useI18n();
   const { user } = useAuth();
   const dateLang = lang === 'en' ? 'en-US' : 'es-ES';
@@ -160,21 +160,23 @@ export default function HistoryPage({ consultas, onToggleFav, onUpdateNota, onDe
                   </button>
                 </div>
               </div>
-              <div className="hf-question">
-                {c.pregunta || t('history.general')}
-              </div>
-              <div className="hf-result">
-                <span className="history-original">
-                  {c.nombre_original || c.nombreOriginal}
-                </span>
-                {(c.tiene_mutaciones || c.tieneMutaciones) && (c.nombre_mutado || c.nombreMutado) && (
-                  <>
-                    <span className="history-arrow"> &rarr; </span>
-                    <span className="history-mutado">
-                      {c.nombre_mutado || c.nombreMutado}
-                    </span>
-                  </>
-                )}
+              <div className="hf-body" onClick={() => onSelect?.(c)}>
+                <div className="hf-question">
+                  {c.pregunta || t('history.general')}
+                </div>
+                <div className="hf-result">
+                  <span className="history-original">
+                    {c.nombre_original || c.nombreOriginal}
+                  </span>
+                  {(c.tiene_mutaciones || c.tieneMutaciones) && (c.nombre_mutado || c.nombreMutado) && (
+                    <>
+                      <span className="history-arrow"> &rarr; </span>
+                      <span className="history-mutado">
+                        {c.nombre_mutado || c.nombreMutado}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Note display/edit */}

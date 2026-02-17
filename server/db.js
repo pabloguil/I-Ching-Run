@@ -7,40 +7,54 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const dbPath = join(__dirname, '..', 'iching.db');
 
-// Inicializar la base de datos
-const SQL = await initSqlJs();
-let db;
+let db = null;
+let dbReady = false;
 
-// Cargar o crear la base de datos
-if (existsSync(dbPath)) {
-  const buffer = readFileSync(dbPath);
-  db = new SQL.Database(buffer);
-} else {
-  db = new SQL.Database();
+// Inicializar la base de datos de forma asíncrona
+async function initDB() {
+  try {
+    const SQL = await initSqlJs();
+
+    if (existsSync(dbPath)) {
+      const buffer = readFileSync(dbPath);
+      db = new SQL.Database(buffer);
+    } else {
+      db = new SQL.Database();
+    }
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS consultas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pregunta TEXT NOT NULL,
+        lineas TEXT NOT NULL,
+        hexagrama_original INTEGER NOT NULL,
+        nombre_original TEXT NOT NULL,
+        hexagrama_mutado INTEGER,
+        nombre_mutado TEXT,
+        tiene_mutaciones INTEGER DEFAULT 0,
+        fecha TEXT DEFAULT (datetime('now', 'localtime'))
+      )
+    `);
+
+    dbReady = true;
+    console.log('Database initialized successfully');
+  } catch (err) {
+    console.error('Failed to initialize database:', err.message);
+    dbReady = false;
+  }
 }
 
-// Crear tabla si no existe
-db.run(`
-  CREATE TABLE IF NOT EXISTS consultas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    pregunta TEXT NOT NULL,
-    lineas TEXT NOT NULL,
-    hexagrama_original INTEGER NOT NULL,
-    nombre_original TEXT NOT NULL,
-    hexagrama_mutado INTEGER,
-    nombre_mutado TEXT,
-    tiene_mutaciones INTEGER DEFAULT 0,
-    fecha TEXT DEFAULT (datetime('now', 'localtime'))
-  )
-`);
+// Iniciar la DB (no bloquea el arranque del servidor)
+const dbInitPromise = initDB();
 
-// Función para persistir cambios
 function saveDatabase() {
+  if (!db) return;
   const data = db.export();
   writeFileSync(dbPath, data);
 }
 
 export function guardarConsulta({ pregunta, lineas, hexOriginal, nombreOriginal, hexMutado, nombreMutado, tieneMutaciones }) {
+  if (!dbReady || !db) throw new Error('Database not available');
   db.run(
     `INSERT INTO consultas (pregunta, lineas, hexagrama_original, nombre_original, hexagrama_mutado, nombre_mutado, tiene_mutaciones)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -59,6 +73,7 @@ export function guardarConsulta({ pregunta, lineas, hexOriginal, nombreOriginal,
 }
 
 export function obtenerHistorial(limit = 50) {
+  if (!dbReady || !db) return [];
   const result = db.exec('SELECT * FROM consultas ORDER BY id DESC LIMIT ?', [limit]);
   if (result.length === 0) return [];
 
@@ -75,8 +90,10 @@ export function obtenerHistorial(limit = 50) {
 }
 
 export function limpiarHistorial() {
+  if (!dbReady || !db) throw new Error('Database not available');
   db.run('DELETE FROM consultas');
   saveDatabase();
 }
 
+export { dbReady, dbInitPromise };
 export default db;

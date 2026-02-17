@@ -1,5 +1,6 @@
 node_modules/
 dist/
+assets/
 *.db
 .env
 .DS_Store

@@ -3,6 +3,7 @@ import QuestionForm from './components/QuestionForm';
 import CoinToss from './components/CoinToss';
 import HexagramDisplay from './components/HexagramDisplay';
 import Interpretation from './components/Interpretation';
+import AiOracle from './components/AiOracle';
 import History from './components/History';
 import { KING_WEN_MAPPING, HEXAGRAMS } from './data/hexagrams';
 import {
@@ -201,6 +202,15 @@ export default function App() {
 
             {fase === 'resultado' && hexOriginal && (
               <Interpretation
+                hexOriginal={hexOriginal}
+                hexMutado={hexMutado}
+                lineasMutantes={lineasMutantes}
+              />
+            )}
+
+            {fase === 'resultado' && hexOriginal && (
+              <AiOracle
+                pregunta={preguntaConfirmada}
                 hexOriginal={hexOriginal}
                 hexMutado={hexMutado}
                 lineasMutantes={lineasMutantes}

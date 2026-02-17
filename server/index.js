@@ -119,15 +119,111 @@ app.delete('/api/consultas', async (req, res) => {
   }
 });
 
+// Oráculo IA — streaming con OpenAI
+app.post('/api/oraculo', async (req, res) => {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({ error: 'OPENAI_API_KEY no configurada en el servidor' });
+  }
+
+  const { pregunta, hexagrama, nombreHexagrama, juicio, imagen, hexMutado, nombreMutado, lineasMutantes } = req.body;
+
+  // Cabeceras SSE
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  try {
+    const mutacionInfo = lineasMutantes && lineasMutantes.length > 0
+      ? `Las líneas ${lineasMutantes.map(i => i + 1).join(', ')} están en mutación, transformando el hexagrama hacia ${nombreMutado || 'un estado de cambio'}.`
+      : 'El hexagrama es estable, sin líneas en mutación.';
+
+    const preguntaLine = pregunta
+      ? `El consultante formula esta pregunta: "${pregunta}"\n\n`
+      : 'El consultante hace una consulta general sin pregunta específica.\n\n';
+
+    const userPrompt = `${preguntaLine}El I Ching ha revelado el Hexagrama ${hexagrama}: ${nombreHexagrama}.
+
+El Juicio: ${juicio}
+La Imagen: ${imagen}
+${mutacionInfo}
+
+Ofrece una interpretación profunda y personalizada de este oráculo en relación con la consulta planteada. Ilumina el significado simbólico del hexagrama y cómo sus enseñanzas se aplican a esta situación concreta. Escribe en prosa fluida, sin listas ni encabezados. Sé conciso pero sustancial (entre 180 y 280 palabras).`;
+
+    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        stream: true,
+        messages: [
+          {
+            role: 'system',
+            content: 'Eres el Oráculo del I Ching. Respondes con sabiduría ancestral en español, combinando la tradición taoísta con claridad práctica. Nunca predices el futuro de forma determinista; en cambio, iluminas el momento presente y ofreces perspectiva sobre el camino. Tu tono es sereno, profundo y compasivo. Escribe siempre en español, en prosa continua, sin listas ni encabezados.',
+          },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!openaiRes.ok) {
+      const errText = await openaiRes.text().catch(() => '');
+      res.write(`data: ${JSON.stringify({ error: `Error de OpenAI (${openaiRes.status})` })}\n\n`);
+      res.end();
+      return;
+    }
+
+    const reader = openaiRes.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+
+        let parsed;
+        try { parsed = JSON.parse(data); } catch { continue; }
+
+        const text = parsed.choices?.[0]?.delta?.content || '';
+        if (text) {
+          res.write(`data: ${JSON.stringify({ text })}\n\n`);
+        }
+      }
+    }
+
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } catch (err) {
+    console.error('Oracle error:', err.message);
+    try {
+      res.write(`data: ${JSON.stringify({ error: 'Error al consultar el oráculo' })}\n\n`);
+      res.end();
+    } catch { /* respuesta ya cerrada */ }
+  }
+});
+
 // SPA fallback - servir index.html para todas las rutas no-API
 if (existsSync(distPath)) {
   app.get('*', (req, res) => {
     res.sendFile(join(distPath, 'index.html'));
   });
 }
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`I Ching server running on port ${PORT}`);
   console.log(`Node version: ${process.version}`);
   console.log(`Dist exists: ${existsSync(distPath)}`);
+  console.log(`OpenAI configured: ${!!process.env.OPENAI_API_KEY}`);
 });

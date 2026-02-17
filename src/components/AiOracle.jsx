@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function AiOracle({ pregunta, hexOriginal, hexMutado, lineasMutantes }) {
+  const { lang, t } = useI18n();
   const [estado, setEstado] = useState('idle'); // 'idle' | 'loading' | 'streaming' | 'done' | 'error'
   const [texto, setTexto] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -16,6 +18,7 @@ export default function AiOracle({ pregunta, hexOriginal, hexMutado, lineasMutan
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          lang,
           pregunta: pregunta || '',
           hexagrama: hexOriginal.numero,
           nombreHexagrama: `${hexOriginal.chino} — ${hexOriginal.nombre}`,
@@ -63,7 +66,7 @@ export default function AiOracle({ pregunta, hexOriginal, hexMutado, lineasMutan
 
       setEstado('done');
     } catch (err) {
-      setErrorMsg(err.message || 'Error al consultar el oráculo');
+      setErrorMsg(err.message || 'Error');
       setEstado('error');
     }
   };
@@ -71,10 +74,10 @@ export default function AiOracle({ pregunta, hexOriginal, hexMutado, lineasMutan
   return (
     <div className="ai-oracle">
       <div className="ai-oracle-header">
-        <span className="ai-oracle-label">✦ Voz del Oráculo</span>
+        <span className="ai-oracle-label">{t('oracle.label')}</span>
         {(estado === 'idle' || estado === 'error') && (
           <button className="btn btn-oracle" onClick={consultar}>
-            Consultar al Oráculo
+            {t('oracle.consult')}
           </button>
         )}
       </div>

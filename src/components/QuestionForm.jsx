@@ -1,6 +1,8 @@
 import React, { useRef, useEffect } from 'react';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function QuestionForm({ pregunta, setPregunta, onConfirmar, onConsultaGeneral }) {
+  const { t } = useI18n();
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export default function QuestionForm({ pregunta, setPregunta, onConfirmar, onCon
       </div>
 
       <label className="form-label">
-        Concentra tu mente en la pregunta y escríbela a continuación
+        {t('question.label')}
       </label>
 
       <textarea
@@ -32,7 +34,7 @@ export default function QuestionForm({ pregunta, setPregunta, onConfirmar, onCon
         value={pregunta}
         onChange={(e) => setPregunta(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Escribe tu pregunta al oráculo..."
+        placeholder={t('question.placeholder')}
         rows={3}
       />
 
@@ -41,15 +43,15 @@ export default function QuestionForm({ pregunta, setPregunta, onConfirmar, onCon
         onClick={onConfirmar}
         disabled={!pregunta.trim()}
       >
-        Consultar el Oráculo
+        {t('question.submit')}
       </button>
 
       <div className="consulta-divider">
-        <span>o</span>
+        <span>{t('question.or')}</span>
       </div>
 
       <button className="btn btn-general" onClick={onConsultaGeneral}>
-        Consulta General
+        {t('question.general')}
       </button>
     </div>
   );

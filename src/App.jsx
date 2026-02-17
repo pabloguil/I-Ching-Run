@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useI18n } from './i18n/index.jsx';
 import QuestionForm from './components/QuestionForm';
 import CoinToss from './components/CoinToss';
 import HexagramDisplay from './components/HexagramDisplay';
@@ -6,6 +7,7 @@ import Interpretation from './components/Interpretation';
 import AiOracle from './components/AiOracle';
 import History from './components/History';
 import { KING_WEN_MAPPING, HEXAGRAMS } from './data/hexagrams';
+import { HEXAGRAMS_EN } from './data/hexagrams-en';
 import {
   hashPregunta,
   generarLinea,
@@ -15,14 +17,19 @@ import {
   hayMutaciones,
 } from './utils/randomness';
 
-function getHexagramaInfo(lineas) {
+function getHexagramaInfo(lineas, lang) {
   const patron = getPatron(lineas);
   const num = KING_WEN_MAPPING[patron];
   if (!num) return null;
-  return { ...HEXAGRAMS[num], numero: num };
+  const base = { ...HEXAGRAMS[num], numero: num };
+  if (lang === 'en' && HEXAGRAMS_EN[num]) {
+    return { ...base, ...HEXAGRAMS_EN[num] };
+  }
+  return base;
 }
 
 export default function App() {
+  const { lang, setLang, t } = useI18n();
   const [pregunta, setPregunta] = useState('');
   const [preguntaConfirmada, setPreguntaConfirmada] = useState('');
   const [lineas, setLineas] = useState([]);
@@ -77,11 +84,11 @@ export default function App() {
     setTimeout(() => setAnimatingLine(-1), 600);
 
     if (nuevasLineas.length === 6) {
-      // Guardar en la base de datos
-      const original = getHexagramaInfo(nuevasLineas);
+      // Guardar en la base de datos (siempre en español para consistencia)
+      const original = getHexagramaInfo(nuevasLineas, 'es');
       const tieneMut = hayMutaciones(nuevasLineas);
       const mutadoLineas = calcularMutado(nuevasLineas);
-      const mutado = tieneMut ? getHexagramaInfo(mutadoLineas) : null;
+      const mutado = tieneMut ? getHexagramaInfo(mutadoLineas, 'es') : null;
 
       setFase('resultado');
 
@@ -115,24 +122,33 @@ export default function App() {
     setAnimatingLine(-1);
   }, []);
 
-  const hexOriginal = lineas.length === 6 ? getHexagramaInfo(lineas) : null;
+  const hexOriginal = lineas.length === 6 ? getHexagramaInfo(lineas, lang) : null;
   const lineasMutantes = lineas.length === 6 ? getLineasMutantes(lineas) : [];
   const tieneMutaciones_ = lineas.length === 6 && hayMutaciones(lineas);
-  const hexMutado = tieneMutaciones_ ? getHexagramaInfo(calcularMutado(lineas)) : null;
+  const hexMutado = tieneMutaciones_ ? getHexagramaInfo(calcularMutado(lineas), lang) : null;
 
   return (
     <div className="app">
       <header className="header">
         <h1 className="title">易經</h1>
-        <p className="subtitle">I Ching &mdash; El Libro de las Mutaciones</p>
-        <button
-          className="btn-tema"
-          onClick={toggleTema}
-          aria-label="Cambiar tema"
-          title={tema === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-        >
-          {tema === 'dark' ? '☀' : '☽'}
-        </button>
+        <p className="subtitle">{t('app.subtitle')}</p>
+        <div className="header-controls">
+          <button
+            className="btn-lang"
+            onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
+            aria-label={lang === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+          >
+            {lang === 'es' ? 'EN' : 'ES'}
+          </button>
+          <button
+            className="btn-tema"
+            onClick={toggleTema}
+            aria-label={t('theme.toggle')}
+            title={tema === 'dark' ? t('theme.light') : t('theme.dark')}
+          >
+            {tema === 'dark' ? '☀' : '☽'}
+          </button>
+        </div>
       </header>
 
       <main className="main">
@@ -149,7 +165,7 @@ export default function App() {
           <>
             {fase === 'lanzando' && preguntaConfirmada && (
               <div className="pregunta-display">
-                <span className="pregunta-label">Tu pregunta:</span>
+                <span className="pregunta-label">{t('question.yours')}</span>
                 <p className="pregunta-texto">{preguntaConfirmada}</p>
               </div>
             )}
@@ -165,7 +181,7 @@ export default function App() {
             {lineas.length > 0 && (
               <div className="hexagramas-container">
                 <div className="hexagrama-section">
-                  <h3 className="section-title">Hexagrama Original</h3>
+                  <h3 className="section-title">{t('hex.original')}</h3>
                   <HexagramDisplay
                     lineas={lineas}
                     lineasMutantes={lineasMutantes}
@@ -180,7 +196,7 @@ export default function App() {
 
                 {tieneMutaciones_ && hexMutado && (
                   <div className="hexagrama-section mutado">
-                    <h3 className="section-title">Hexagrama Mutado</h3>
+                    <h3 className="section-title">{t('hex.transformed')}</h3>
                     <HexagramDisplay
                       lineas={calcularMutado(lineas)}
                       lineasMutantes={lineasMutantes}
@@ -194,7 +210,7 @@ export default function App() {
 
                 {!tieneMutaciones_ && lineas.length === 6 && (
                   <div className="hexagrama-section mutado sin-mutacion">
-                    <p className="sin-mutaciones-texto">Sin mutaciones</p>
+                    <p className="sin-mutaciones-texto">{t('hex.noChanges')}</p>
                   </div>
                 )}
               </div>
@@ -219,7 +235,7 @@ export default function App() {
 
             {fase === 'resultado' && (
               <button className="btn btn-nueva" onClick={reiniciar}>
-                Nueva Consulta
+                {t('action.newConsultation')}
               </button>
             )}
           </>
@@ -231,7 +247,7 @@ export default function App() {
           className="btn btn-historial"
           onClick={() => setShowHistory(!showHistory)}
         >
-          {showHistory ? 'Ocultar Historial' : 'Ver Historial'}
+          {showHistory ? t('history.hide') : t('history.show')}
         </button>
         {showHistory && <History key={historialKey} />}
       </footer>

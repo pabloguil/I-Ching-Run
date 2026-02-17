@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../i18n/index.jsx';
 
 /**
  * Dibuja un hexagrama como SVG.
@@ -10,6 +11,7 @@ import React from 'react';
  * Mutante: se muestra en rojo/dorado
  */
 export default function HexagramDisplay({ lineas, lineasMutantes = [], animatingLine = -1, esMutado = false }) {
+  const { t } = useI18n();
   const width = 180;
   const height = 180;
   const segmentLength = 68;
@@ -89,7 +91,7 @@ export default function HexagramDisplay({ lineas, lineasMutantes = [], animating
         viewBox={`0 0 ${width} ${height}`}
         className="hexagram-svg"
         role="img"
-        aria-label="Hexagrama del I Ching"
+        aria-label={t('hex.ariaLabel')}
       >
         {renderLineas()}
       </svg>

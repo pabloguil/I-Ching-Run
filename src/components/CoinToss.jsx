@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-
-const VALOR_NOMBRES = {
-  6: 'Yin Mutante',
-  7: 'Yang Estable',
-  8: 'Yin Estable',
-  9: 'Yang Mutante',
-};
+import { useI18n } from '../i18n/index.jsx';
 
 function YangFace() {
   return (
@@ -33,6 +27,7 @@ function YinFace() {
 }
 
 export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, animatingLine }) {
+  const { t } = useI18n();
   const [isSpinning, setIsSpinning] = useState(false);
   const [shownMonedas, setShownMonedas] = useState(null);
   const prevUltimaMonedaRef = useRef(null);
@@ -56,7 +51,7 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
   return (
     <div className="coin-toss">
       <div className="lineas-count">
-        Líneas generadas: {lineas.length} / 6
+        {t('coins.count', { count: lineas.length })}
       </div>
 
       {!completado && (
@@ -66,9 +61,9 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
           disabled={isSpinning}
         >
           <span className="coin-icons">☰</span>
-          {isSpinning ? 'Lanzando...' : 'Lanzar Monedas'}
+          {isSpinning ? t('coins.casting') : t('coins.cast')}
           {!isSpinning && (
-            <span className="linea-num">(Línea {lineas.length + 1})</span>
+            <span className="linea-num">{t('coins.line', { num: lineas.length + 1 })}</span>
           )}
         </button>
       )}
@@ -110,7 +105,7 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
       {!isSpinning && shownMonedas && ultimaMoneda && (
         <div className={`moneda-resultado ${animatingLine >= 0 ? 'animating' : ''}`}>
           <span className="moneda-valor">
-            {ultimaMoneda.valor} &mdash; {VALOR_NOMBRES[ultimaMoneda.valor]}
+            {ultimaMoneda.valor} &mdash; {t(`coins.${ultimaMoneda.valor}`)}
           </span>
         </div>
       )}
@@ -124,7 +119,7 @@ export default function CoinToss({ lineas, ultimaMoneda, onLanzar, completado, a
             >
               <span className="linea-num-label">{i + 1}.</span>
               <span className="linea-valor">{v}</span>
-              <span className="linea-tipo">{VALOR_NOMBRES[v]}</span>
+              <span className="linea-tipo">{t(`coins.${v}`)}</span>
             </div>
           ))}
         </div>

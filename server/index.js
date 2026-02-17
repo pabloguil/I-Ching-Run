@@ -126,7 +126,8 @@ app.post('/api/oraculo', async (req, res) => {
     return res.status(503).json({ error: 'OPENAI_API_KEY no configurada en el servidor' });
   }
 
-  const { pregunta, hexagrama, nombreHexagrama, juicio, imagen, hexMutado, nombreMutado, lineasMutantes } = req.body;
+  const { lang, pregunta, hexagrama, nombreHexagrama, juicio, imagen, hexMutado, nombreMutado, lineasMutantes } = req.body;
+  const isEn = lang === 'en';
 
   // Cabeceras SSE
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -136,20 +137,40 @@ app.post('/api/oraculo', async (req, res) => {
 
   try {
     const mutacionInfo = lineasMutantes && lineasMutantes.length > 0
-      ? `Las líneas ${lineasMutantes.map(i => i + 1).join(', ')} están en mutación, transformando el hexagrama hacia ${nombreMutado || 'un estado de cambio'}.`
-      : 'El hexagrama es estable, sin líneas en mutación.';
+      ? (isEn
+        ? `Lines ${lineasMutantes.map(i => i + 1).join(', ')} are changing, transforming the hexagram towards ${nombreMutado || 'a state of change'}.`
+        : `Las líneas ${lineasMutantes.map(i => i + 1).join(', ')} están en mutación, transformando el hexagrama hacia ${nombreMutado || 'un estado de cambio'}.`)
+      : (isEn
+        ? 'The hexagram is stable, with no changing lines.'
+        : 'El hexagrama es estable, sin líneas en mutación.');
 
     const preguntaLine = pregunta
-      ? `El consultante formula esta pregunta: "${pregunta}"\n\n`
-      : 'El consultante hace una consulta general sin pregunta específica.\n\n';
+      ? (isEn
+        ? `The querent asks this question: "${pregunta}"\n\n`
+        : `El consultante formula esta pregunta: "${pregunta}"\n\n`)
+      : (isEn
+        ? 'The querent makes a general consultation without a specific question.\n\n'
+        : 'El consultante hace una consulta general sin pregunta específica.\n\n');
 
-    const userPrompt = `${preguntaLine}El I Ching ha revelado el Hexagrama ${hexagrama}: ${nombreHexagrama}.
+    const userPrompt = isEn
+      ? `${preguntaLine}The I Ching has revealed Hexagram ${hexagrama}: ${nombreHexagrama}.
+
+The Judgment: ${juicio}
+The Image: ${imagen}
+${mutacionInfo}
+
+Offer a deep and personalized interpretation of this oracle in relation to the query. Illuminate the symbolic meaning of the hexagram and how its teachings apply to this concrete situation. Write in flowing prose, without lists or headings. Be concise yet substantial (between 180 and 280 words).`
+      : `${preguntaLine}El I Ching ha revelado el Hexagrama ${hexagrama}: ${nombreHexagrama}.
 
 El Juicio: ${juicio}
 La Imagen: ${imagen}
 ${mutacionInfo}
 
 Ofrece una interpretación profunda y personalizada de este oráculo en relación con la consulta planteada. Ilumina el significado simbólico del hexagrama y cómo sus enseñanzas se aplican a esta situación concreta. Escribe en prosa fluida, sin listas ni encabezados. Sé conciso pero sustancial (entre 180 y 280 palabras).`;
+
+    const systemContent = isEn
+      ? 'You are the Oracle of the I Ching. You respond with ancestral wisdom in English, combining the Taoist tradition with practical clarity. You never predict the future deterministically; instead, you illuminate the present moment and offer perspective on the path. Your tone is serene, profound, and compassionate. Always write in English, in continuous prose, without lists or headings.'
+      : 'Eres el Oráculo del I Ching. Respondes con sabiduría ancestral en español, combinando la tradición taoísta con claridad práctica. Nunca predices el futuro de forma determinista; en cambio, iluminas el momento presente y ofreces perspectiva sobre el camino. Tu tono es sereno, profundo y compasivo. Escribe siempre en español, en prosa continua, sin listas ni encabezados.';
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -161,10 +182,7 @@ Ofrece una interpretación profunda y personalizada de este oráculo en relació
         model: 'gpt-4o-mini',
         stream: true,
         messages: [
-          {
-            role: 'system',
-            content: 'Eres el Oráculo del I Ching. Respondes con sabiduría ancestral en español, combinando la tradición taoísta con claridad práctica. Nunca predices el futuro de forma determinista; en cambio, iluminas el momento presente y ofreces perspectiva sobre el camino. Tu tono es sereno, profundo y compasivo. Escribe siempre en español, en prosa continua, sin listas ni encabezados.',
-          },
+          { role: 'system', content: systemContent },
           { role: 'user', content: userPrompt },
         ],
       }),

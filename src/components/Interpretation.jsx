@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useI18n } from '../i18n/index.jsx';
 
 export default function Interpretation({ hexOriginal, hexMutado, lineasMutantes }) {
+  const { t } = useI18n();
   const [expandido, setExpandido] = useState(true);
 
   if (!hexOriginal) return null;
@@ -12,7 +14,7 @@ export default function Interpretation({ hexOriginal, hexMutado, lineasMutantes 
         onClick={() => setExpandido(!expandido)}
       >
         <span className="toggle-icon">{expandido ? '▾' : '▸'}</span>
-        Interpretación
+        {t('interp.title')}
       </button>
 
       {expandido && (
@@ -25,23 +27,23 @@ export default function Interpretation({ hexOriginal, hexMutado, lineasMutantes 
             </h3>
 
             <div className="interp-trigramas">
-              <span>☶ Superior: {hexOriginal.trigrama_superior}</span>
+              <span>{t('interp.upper')} {hexOriginal.trigrama_superior}</span>
               <span className="trigrama-separator">|</span>
-              <span>☷ Inferior: {hexOriginal.trigrama_inferior}</span>
+              <span>{t('interp.lower')} {hexOriginal.trigrama_inferior}</span>
             </div>
 
             <div className="interp-block">
-              <h4>El Juicio</h4>
+              <h4>{t('interp.judgment')}</h4>
               <p>{hexOriginal.juicio}</p>
             </div>
 
             <div className="interp-block">
-              <h4>La Imagen</h4>
+              <h4>{t('interp.image')}</h4>
               <p>{hexOriginal.imagen}</p>
             </div>
 
             <div className="interp-block">
-              <h4>Significado</h4>
+              <h4>{t('interp.meaning')}</h4>
               <p>{hexOriginal.significado}</p>
             </div>
           </div>
@@ -50,7 +52,7 @@ export default function Interpretation({ hexOriginal, hexMutado, lineasMutantes 
           {hexMutado && (
             <div className="interp-section mutado-section">
               <div className="mutation-arrow">
-                <span>Líneas mutantes: {lineasMutantes.map(i => i + 1).join(', ')}</span>
+                <span>{t('interp.changingLines')} {lineasMutantes.map(i => i + 1).join(', ')}</span>
                 <span className="arrow">⟶</span>
               </div>
 
@@ -60,23 +62,23 @@ export default function Interpretation({ hexOriginal, hexMutado, lineasMutantes 
               </h3>
 
               <div className="interp-trigramas">
-                <span>☶ Superior: {hexMutado.trigrama_superior}</span>
+                <span>{t('interp.upper')} {hexMutado.trigrama_superior}</span>
                 <span className="trigrama-separator">|</span>
-                <span>☷ Inferior: {hexMutado.trigrama_inferior}</span>
+                <span>{t('interp.lower')} {hexMutado.trigrama_inferior}</span>
               </div>
 
               <div className="interp-block">
-                <h4>El Juicio</h4>
+                <h4>{t('interp.judgment')}</h4>
                 <p>{hexMutado.juicio}</p>
               </div>
 
               <div className="interp-block">
-                <h4>La Imagen</h4>
+                <h4>{t('interp.image')}</h4>
                 <p>{hexMutado.imagen}</p>
               </div>
 
               <div className="interp-block">
-                <h4>Significado</h4>
+                <h4>{t('interp.meaning')}</h4>
                 <p>{hexMutado.significado}</p>
               </div>
             </div>

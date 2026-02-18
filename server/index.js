@@ -55,14 +55,21 @@ app.use((req, res, next) => {
 });
 
 // --- CORS ---
+// If ALLOWED_ORIGINS is set, restrict to those origins.
+// Otherwise allow all origins (production single-domain deployment where
+// the browser sends Origin even for same-origin POST requests).
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:5173', 'http://localhost:3001'];
+  : null;
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow same-origin requests (no origin header) and whitelisted origins
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    // No origin header → same-origin or server-to-server request → allow
+    if (!origin) return callback(null, true);
+    // No restriction configured → allow all origins
+    if (!allowedOrigins) return callback(null, true);
+    // Whitelist check
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('CORS: origin not allowed'));
   },
   credentials: true,

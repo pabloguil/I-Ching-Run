@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0a0a0f" rx="80"/>
+  <!-- 6 líneas del hexagrama — centradas -->
+  <!-- Yang lines (continua) -->
+  <rect x="96" y="96"  width="320" height="28" fill="#d4a843" rx="4"/>
+  <rect x="96" y="148" width="320" height="28" fill="#d4a843" rx="4"/>
+  <!-- Yin line (partida) -->
+  <rect x="96" y="200" width="145" height="28" fill="#d4a843" rx="4"/>
+  <rect x="271" y="200" width="145" height="28" fill="#d4a843" rx="4"/>
+  <!-- Yang mutante -->
+  <rect x="96" y="252" width="320" height="28" fill="#c0392b" rx="4"/>
+  <!-- Yang -->
+  <rect x="96" y="304" width="320" height="28" fill="#d4a843" rx="4"/>
+  <!-- Yin -->
+  <rect x="96" y="356" width="145" height="28" fill="#d4a843" rx="4"/>
+  <rect x="271" y="356" width="145" height="28" fill="#d4a843" rx="4"/>
+  <!-- Carácter 易 -->
+  <text x="256" y="470" text-anchor="middle" font-family="serif" font-size="72" fill="#d4a843" opacity="0.6">易</text>
+</svg>

@@ -22,6 +22,8 @@ export default {
   'coins.7': 'Yang Estable',
   'coins.8': 'Yin Estable',
   'coins.9': 'Yang Mutante',
+  'coins.changing': 'Línea mutante',
+  'coins.linesHistory': 'Líneas generadas',
 
   // Hexagram
   'hex.ariaLabel': 'Hexagrama del I Ching',
@@ -41,11 +43,14 @@ export default {
   'interp.image': 'La Imagen',
   'interp.meaning': 'Significado',
   'interp.changingLines': 'Líneas mutantes:',
+  'interp.changingLinesTitle': 'Las Líneas que Mutan',
+  'interp.line': 'Línea',
   'interp.upper': '☶ Superior:',
   'interp.lower': '☷ Inferior:',
 
   // Oracle AI
   'oracle.label': '✦ Voz del Oráculo',
+  'oracle.desc': 'Recibe una interpretación personalizada de tu hexagrama generada por IA.',
   'oracle.consult': 'Consultar al Oráculo',
   'oracle.cancel': 'Interrumpir',
   'oracle.timeout': 'La consulta tardó demasiado. Inténtalo de nuevo.',
@@ -106,4 +111,31 @@ export default {
 
   // Actions
   'action.newConsultation': 'Nueva Consulta',
+
+  // Share
+  'share.label': 'Compartir lectura',
+  'share.generating': 'Generando imagen...',
+
+  // Onboarding
+  'onboarding.title': 'Bienvenida al I Ching',
+  'onboarding.skip': 'Saltar',
+  'onboarding.next': 'Siguiente →',
+  'onboarding.back': '← Atrás',
+  'onboarding.start': 'Comenzar →',
+  'onboarding.progress': 'Progreso del tutorial',
+  'onboarding.step': 'Paso',
+  'onboarding.step1.title': '¿Qué es el I Ching?',
+  'onboarding.step1.desc': 'El I Ching o "Libro de las Mutaciones" es un oráculo chino milenario. Formula una pregunta sincera, lanza monedas y el hexagrama resultante te ofrecerá una perspectiva sobre tu situación.',
+  'onboarding.step2.title': 'Cómo funciona',
+  'onboarding.step2.desc': 'Escribe tu pregunta → lanza las monedas 6 veces (una por cada línea del hexagrama) → recibe tu interpretación. Las líneas mutantes transforman el hexagrama en uno nuevo, revelando la dirección del cambio.',
+  'onboarding.step3.title': 'Voz del Oráculo IA',
+  'onboarding.step3.desc': 'Al obtener tu hexagrama, puedes solicitar una interpretación personalizada generada por IA. Esta "Voz del Oráculo" conecta los símbolos milenarios con tu pregunta concreta.',
+
+  // Error Boundary
+  'error.title': 'El oráculo guarda silencio',
+  'error.message': 'Ha ocurrido un error inesperado. Reinicia tu consulta para continuar.',
+  'error.messageInterp': 'No se pudo mostrar la interpretación. Intenta recargar la página.',
+  'error.messageOracle': 'La Voz del Oráculo no está disponible en este momento.',
+  'error.reset': 'Reiniciar consulta',
+  'error.dismiss': 'Cerrar',
 };

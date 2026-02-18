@@ -22,6 +22,8 @@ export default {
   'coins.7': 'Stable Yang',
   'coins.8': 'Stable Yin',
   'coins.9': 'Changing Yang',
+  'coins.changing': 'Changing line',
+  'coins.linesHistory': 'Generated lines',
 
   // Hexagram
   'hex.ariaLabel': 'I Ching Hexagram',
@@ -41,11 +43,14 @@ export default {
   'interp.image': 'The Image',
   'interp.meaning': 'Meaning',
   'interp.changingLines': 'Changing lines:',
+  'interp.changingLinesTitle': 'The Changing Lines',
+  'interp.line': 'Line',
   'interp.upper': '☶ Upper:',
   'interp.lower': '☷ Lower:',
 
   // Oracle AI
   'oracle.label': '✦ Voice of the Oracle',
+  'oracle.desc': 'Receive an AI-generated personalized interpretation of your hexagram.',
   'oracle.consult': 'Consult the Oracle',
   'oracle.cancel': 'Cancel',
   'oracle.timeout': 'Request timed out. Please try again.',
@@ -106,4 +111,31 @@ export default {
 
   // Actions
   'action.newConsultation': 'New Consultation',
+
+  // Share
+  'share.label': 'Share reading',
+  'share.generating': 'Generating image...',
+
+  // Onboarding
+  'onboarding.title': 'Welcome to I Ching',
+  'onboarding.skip': 'Skip',
+  'onboarding.next': 'Next →',
+  'onboarding.back': '← Back',
+  'onboarding.start': 'Begin →',
+  'onboarding.progress': 'Tutorial progress',
+  'onboarding.step': 'Step',
+  'onboarding.step1.title': 'What is the I Ching?',
+  'onboarding.step1.desc': 'The I Ching or "Book of Changes" is an ancient Chinese oracle. Formulate a sincere question, cast coins, and the resulting hexagram will offer you perspective on your situation.',
+  'onboarding.step2.title': 'How it works',
+  'onboarding.step2.desc': 'Write your question → cast the coins 6 times (one per hexagram line) → receive your interpretation. Changing lines transform the hexagram into a new one, revealing the direction of change.',
+  'onboarding.step3.title': 'AI Voice of the Oracle',
+  'onboarding.step3.desc': 'Once you have your hexagram, you can request an AI-generated personalized interpretation. This "Voice of the Oracle" connects the ancient symbols with your specific question.',
+
+  // Error Boundary
+  'error.title': 'The oracle falls silent',
+  'error.message': 'An unexpected error has occurred. Reset your consultation to continue.',
+  'error.messageInterp': 'Could not display the interpretation. Try reloading the page.',
+  'error.messageOracle': 'The Voice of the Oracle is unavailable at this time.',
+  'error.reset': 'Reset consultation',
+  'error.dismiss': 'Dismiss',
 };

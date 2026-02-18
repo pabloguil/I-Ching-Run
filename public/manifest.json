@@ -1,0 +1,41 @@
+{
+  "name": "I Ching — 易經",
+  "short_name": "I Ching",
+  "description": "Consulta el oráculo milenario del I Ching. Lanza monedas, genera hexagramas y recibe interpretaciones ancestrales.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#d4a843",
+  "orientation": "portrait",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["lifestyle", "spirituality", "education"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Nueva Consulta",
+      "short_name": "Consultar",
+      "description": "Inicia una nueva consulta al oráculo",
+      "url": "/"
+    }
+  ]
+}

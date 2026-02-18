@@ -12,6 +12,10 @@ import AuthModal from './components/AuthModal';
 import HistorySidebar from './components/HistorySidebar';
 import HistoryPage from './components/HistoryPage';
 import ConsultaHistorialView from './components/ConsultaHistorialView';
+import ErrorBoundary from './components/ErrorBoundary';
+import OnboardingModal from './components/OnboardingModal';
+import PhaseTransition from './components/PhaseTransition';
+import ShareButton from './components/ShareButton';
 import { calcularMutado } from './utils/randomness';
 
 export default function App() {
@@ -22,6 +26,9 @@ export default function App() {
   // UI state (no relacionado con el oráculo)
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem('iching-onboarding-done');
+  });
   const [vista, setVista] = useState('oracle'); // 'oracle' | 'historial' | 'consulta'
   const [consultaActiva, setConsultaActiva] = useState(null);
   const [vistaPrevia, setVistaPrevia] = useState('oracle');
@@ -165,96 +172,126 @@ export default function App() {
       </header>
 
       <main className="main">
-        {fase === 'pregunta' && (
-          <QuestionForm
-            pregunta={pregunta}
-            setPregunta={setPregunta}
-            onConfirmar={confirmarPregunta}
-            onConsultaGeneral={consultaGeneral}
-          />
-        )}
+        <ErrorBoundary
+          title={t('error.title')}
+          message={t('error.message')}
+          resetLabel={t('error.reset')}
+          onReset={reiniciar}
+        >
+          <PhaseTransition phase={fase}>
+          {fase === 'pregunta' && (
+            <QuestionForm
+              pregunta={pregunta}
+              setPregunta={setPregunta}
+              onConfirmar={confirmarPregunta}
+              onConsultaGeneral={consultaGeneral}
+            />
+          )}
 
-        {fase !== 'pregunta' && (
-          <>
-                {/* 1. Pregunta */}
-            {preguntaConfirmada && (
-              <div className="pregunta-display">
-                <span className="pregunta-label">{t('question.yours')}</span>
-                <p className="pregunta-texto">{preguntaConfirmada}</p>
-              </div>
-            )}
+          {fase !== 'pregunta' && (
+            <>
+                  {/* 1. Pregunta */}
+              {preguntaConfirmada && (
+                <div className="pregunta-display">
+                  <span className="pregunta-label">{t('question.yours')}</span>
+                  <p className="pregunta-texto">{preguntaConfirmada}</p>
+                </div>
+              )}
 
-            {/* 2. Hexagramas — siempre visibles desde el inicio */}
-            <div className="hexagramas-container">
-              <div className="hexagrama-section">
-                <h3 className="section-title">{t('hex.original')}</h3>
-                <HexagramDisplay
-                  lineas={lineas}
-                  lineasMutantes={lineasMutantes}
-                  animatingLine={animatingLine}
-                />
-                {hexOriginal && (
-                  <p className="hexagrama-nombre">
-                    {hexOriginal.numero}. {hexOriginal.chino} &mdash; {hexOriginal.nombre}
-                  </p>
-                )}
-              </div>
-
-              {tieneMutaciones ? (
-                <div className="hexagrama-section mutado">
-                  <h3 className="section-title">{t('hex.transformed')}</h3>
+              {/* 2. Hexagramas — siempre visibles desde el inicio */}
+              <div className="hexagramas-container">
+                <div className="hexagrama-section">
+                  <h3 className="section-title">{t('hex.original')}</h3>
                   <HexagramDisplay
-                    lineas={calcularMutado(lineas)}
+                    lineas={lineas}
                     lineasMutantes={lineasMutantes}
-                    esMutado
+                    animatingLine={animatingLine}
                   />
-                  {hexMutado && (
+                  {hexOriginal && (
                     <p className="hexagrama-nombre">
-                      {hexMutado.numero}. {hexMutado.chino} &mdash; {hexMutado.nombre}
+                      {hexOriginal.numero}. {hexOriginal.chino} &mdash; {hexOriginal.nombre}
                     </p>
                   )}
                 </div>
-              ) : fase === 'resultado' ? (
-                <div className="hexagrama-section sin-mutacion">
-                  <p className="sin-mutaciones-texto">{t('hex.noChanges')}</p>
+
+                {tieneMutaciones ? (
+                  <div className="hexagrama-section mutado">
+                    <h3 className="section-title">{t('hex.transformed')}</h3>
+                    <HexagramDisplay
+                      lineas={calcularMutado(lineas)}
+                      lineasMutantes={lineasMutantes}
+                      esMutado
+                    />
+                    {hexMutado && (
+                      <p className="hexagrama-nombre">
+                        {hexMutado.numero}. {hexMutado.chino} &mdash; {hexMutado.nombre}
+                      </p>
+                    )}
+                  </div>
+                ) : fase === 'resultado' ? (
+                  <div className="hexagrama-section sin-mutacion">
+                    <p className="sin-mutaciones-texto">{t('hex.noChanges')}</p>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* 3. Monedas + resultado + botón */}
+              <CoinToss
+                lineas={lineas}
+                ultimaMoneda={ultimaMoneda}
+                onLanzar={lanzarMonedas}
+                completado={lineas.length >= 6}
+                animatingLine={animatingLine}
+              />
+
+              {/* 4. Interpretación + IA (solo en resultado) */}
+              {fase === 'resultado' && hexOriginal && (
+                <ErrorBoundary
+                  title={t('error.title')}
+                  message={t('error.messageInterp')}
+                  resetLabel={t('error.dismiss')}
+                >
+                  <Interpretation
+                    hexOriginal={hexOriginal}
+                    hexMutado={hexMutado}
+                    lineasMutantes={lineasMutantes}
+                  />
+                </ErrorBoundary>
+              )}
+
+              {fase === 'resultado' && hexOriginal && (
+                <ErrorBoundary
+                  title={t('error.title')}
+                  message={t('error.messageOracle')}
+                  resetLabel={t('error.dismiss')}
+                >
+                  <AiOracle
+                    pregunta={preguntaConfirmada}
+                    hexOriginal={hexOriginal}
+                    hexMutado={hexMutado}
+                    lineasMutantes={lineasMutantes}
+                  />
+                </ErrorBoundary>
+              )}
+
+              {fase === 'resultado' && hexOriginal && (
+                <div className="resultado-actions">
+                  <ShareButton
+                    pregunta={preguntaConfirmada}
+                    hexOriginal={hexOriginal}
+                    hexMutado={hexMutado}
+                    lineasMutantes={lineasMutantes}
+                    lineas={lineas}
+                  />
+                  <button className="btn btn-nueva" onClick={reiniciar}>
+                    {t('action.newConsultation')}
+                  </button>
                 </div>
-              ) : null}
-            </div>
-
-            {/* 3. Monedas + resultado + botón */}
-            <CoinToss
-              lineas={lineas}
-              ultimaMoneda={ultimaMoneda}
-              onLanzar={lanzarMonedas}
-              completado={lineas.length >= 6}
-              animatingLine={animatingLine}
-            />
-
-            {/* 4. Interpretación + IA (solo en resultado) */}
-            {fase === 'resultado' && hexOriginal && (
-              <Interpretation
-                hexOriginal={hexOriginal}
-                hexMutado={hexMutado}
-                lineasMutantes={lineasMutantes}
-              />
-            )}
-
-            {fase === 'resultado' && hexOriginal && (
-              <AiOracle
-                pregunta={preguntaConfirmada}
-                hexOriginal={hexOriginal}
-                hexMutado={hexMutado}
-                lineasMutantes={lineasMutantes}
-              />
-            )}
-
-            {fase === 'resultado' && (
-              <button className="btn btn-nueva" onClick={reiniciar}>
-                {t('action.newConsultation')}
-              </button>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
+          </PhaseTransition>
+        </ErrorBoundary>
       </main>
 
       <footer className="footer">
@@ -277,6 +314,15 @@ export default function App() {
           onSelect={(c) => { verConsulta(c, 'oracle'); setShowSidebar(false); }}
           onClose={() => setShowSidebar(false)}
           onOpenFull={() => { setVista('historial'); setShowSidebar(false); }}
+        />
+      )}
+
+      {showOnboarding && (
+        <OnboardingModal
+          onClose={() => {
+            localStorage.setItem('iching-onboarding-done', '1');
+            setShowOnboarding(false);
+          }}
         />
       )}
     </div>

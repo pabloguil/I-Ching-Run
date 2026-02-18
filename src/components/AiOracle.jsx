@@ -116,10 +116,15 @@ export default function AiOracle({ pregunta, hexOriginal, hexMutado, lineasMutan
   return (
     <div className="ai-oracle">
       <div className="ai-oracle-header">
-        <span className="ai-oracle-label">{t('oracle.label')}</span>
+        <div className="ai-oracle-header-text">
+          <span className="ai-oracle-label">{t('oracle.label')}</span>
+          {estado === 'idle' && (
+            <span className="ai-oracle-desc">{t('oracle.desc')}</span>
+          )}
+        </div>
         {(estado === 'idle' || estado === 'error') && (
-          <button className="btn btn-oracle" onClick={consultar}>
-            {t('oracle.consult')}
+          <button className="btn btn-oracle btn-oracle-prominent" onClick={consultar}>
+            ✦ {t('oracle.consult')}
           </button>
         )}
         {isActive && (

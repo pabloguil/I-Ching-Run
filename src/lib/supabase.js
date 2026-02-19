@@ -186,3 +186,57 @@ export async function dbDelete(table, id, session) {
   });
   if (!res.ok) throw new Error('DB delete error');
 }
+
+// --- User profile & account management ---
+
+export async function updateUserProfile(updates) {
+  const session = loadSession();
+  if (!session?.access_token) throw new Error('Not authenticated');
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ data: updates }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'Update failed');
+  // Persist updated user in session
+  const newSession = { ...session, user: data };
+  saveSession(newSession);
+  return data;
+}
+
+export async function updatePassword(newPassword) {
+  const session = loadSession();
+  if (!session?.access_token) throw new Error('Not authenticated');
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ password: newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'Password update failed');
+  return data;
+}
+
+export async function sendPasswordReset(email) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_KEY,
+    },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error_description || data.msg || data.message || 'Recovery failed');
+  }
+}

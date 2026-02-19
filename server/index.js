@@ -331,6 +331,36 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// Eliminar cuenta del usuario autenticado
+app.post('/api/auth/delete-account', deleteLimiter, requireAuth, async (req, res) => {
+  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!SUPABASE_SERVICE_KEY) {
+    return res.status(503).json({ error: 'Eliminación de cuenta no disponible: SUPABASE_SERVICE_ROLE_KEY no configurada' });
+  }
+  const userId = req.authUser?.id;
+  if (!userId) {
+    return res.status(400).json({ error: 'No se pudo obtener el ID de usuario' });
+  }
+  try {
+    const deleteRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+      },
+    });
+    if (!deleteRes.ok) {
+      const data = await deleteRes.json().catch(() => ({}));
+      return res.status(deleteRes.status).json({ error: data.message || 'Error al eliminar cuenta' });
+    }
+    clearSessionCookie(res);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[delete-account]', err);
+    res.status(500).json({ error: 'Error interno al eliminar cuenta' });
+  }
+});
+
 // Importar DB de forma lazy para no bloquear el arranque.
 // Se almacena la Promise (no el módulo) para evitar que peticiones
 // concurrentes que lleguen antes de que resuelva el primer import

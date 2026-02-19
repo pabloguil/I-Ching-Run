@@ -9,6 +9,8 @@ import HexagramDisplay from './components/HexagramDisplay';
 import Interpretation from './components/Interpretation';
 import AiOracle from './components/AiOracle';
 import AuthModal from './components/AuthModal';
+import UserMenu from './components/UserMenu';
+import UserProfileModal from './components/UserProfileModal';
 import HistorySidebar from './components/HistorySidebar';
 import HistoryPage from './components/HistoryPage';
 import ConsultaHistorialView from './components/ConsultaHistorialView';
@@ -20,11 +22,13 @@ import { calcularMutado } from './utils/randomness';
 
 export default function App() {
   const { lang, setLang, t } = useI18n();
-  const { user, configured, logout } = useAuth();
+  const { user, displayName, configured } = useAuth();
   const history = useHistory();
 
   // UI state (no relacionado con el oráculo)
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('iching-onboarding-done');
@@ -134,13 +138,23 @@ export default function App() {
           {/* Auth button */}
           {configured && (
             user ? (
-              <button
-                className="btn-user"
-                onClick={logout}
-                title={t('auth.logout')}
-              >
-                {user.email?.charAt(0).toUpperCase() || '?'}
-              </button>
+              <div className="user-menu-wrapper">
+                <button
+                  className={`btn-user ${showUserMenu ? 'active' : ''}`}
+                  onClick={() => setShowUserMenu((v) => !v)}
+                  title={displayName || user.email}
+                  aria-haspopup="true"
+                  aria-expanded={showUserMenu}
+                >
+                  {user.email?.charAt(0).toUpperCase() || '?'}
+                </button>
+                {showUserMenu && (
+                  <UserMenu
+                    onClose={() => setShowUserMenu(false)}
+                    onOpenProfile={() => setShowUserProfile(true)}
+                  />
+                )}
+              </div>
             ) : (
               <button
                 className="btn-icon-header"
@@ -306,6 +320,10 @@ export default function App() {
       {/* Modals & overlays */}
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+
+      {showUserProfile && (
+        <UserProfileModal onClose={() => setShowUserProfile(false)} />
       )}
 
       {showSidebar && (

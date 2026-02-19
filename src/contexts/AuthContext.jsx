@@ -7,6 +7,9 @@ import {
   signUp as sbSignUp,
   signOut as sbSignOut,
   refreshSession,
+  updateUserProfile as sbUpdateProfile,
+  updatePassword as sbUpdatePassword,
+  sendPasswordReset as sbSendPasswordReset,
 } from '../lib/supabase';
 
 const AuthContext = createContext(null);
@@ -65,8 +68,49 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateProfile = useCallback(async (updates) => {
+    const updatedUser = await sbUpdateProfile(updates);
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword) => {
+    return sbUpdatePassword(newPassword);
+  }, []);
+
+  const sendPasswordReset = useCallback(async (email) => {
+    return sbSendPasswordReset(email);
+  }, []);
+
+  const deleteAccount = useCallback(async () => {
+    const stored = getSession();
+    if (!stored?.access_token) throw new Error('Not authenticated');
+    const res = await fetch('/api/auth/delete-account', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${stored.access_token}`,
+      },
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Could not delete account');
+    }
+    await sbSignOut();
+    setSession(null);
+    setUser(null);
+  }, []);
+
+  // Helper: display_name from user metadata, fallback to email prefix
+  const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || null;
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, configured, login, signup, logout }}>
+    <AuthContext.Provider value={{
+      user, session, loading, configured,
+      displayName,
+      login, signup, logout,
+      updateProfile, updatePassword, sendPasswordReset, deleteAccount,
+    }}>
       {children}
     </AuthContext.Provider>
   );
